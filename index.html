@@ -138,7 +138,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
   <section class="conversa">
     <div class="topo">
       <span class="lampada" id="lamp"></span>
-      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v15</small>
+      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v18</small>
       <span class="estado" id="estado">parado</span>
       <button id="btnParar" title="Parar de falar">Calar</button>
       <button id="btnAjustes">Ajustes</button>
@@ -282,15 +282,15 @@ function linhasDoTSV(tsv){
   return linhasDePalavras(String(tsv||'').split('\n').slice(1).map(l=>l.split('\t')).filter(c=>c[0]==='5'&&c[11]&&c[11].trim())
     .map(c=>({x:+c[6],y:+c[7],w:+c[8],h:+c[9],t:c[11].trim(),ln:c[1]+'.'+c[2]+'.'+c[3]+'.'+c[4]})));
 }
-function inclinacao(ws){
+function inclinacoes(ws){
   const por={};ws.forEach(w=>{if(w.ln!=null)(por[w.ln]=por[w.ln]||[]).push(w)});
-  const sl=[];
+  const out=[];
   Object.values(por).forEach(l=>{if(l.length<3)return;l.sort((a,b)=>a.x-b.x);const a=l[0],b=l[l.length-1];const dx=(b.x+b.w/2)-(a.x+a.w/2);if(dx<150)return;
-    // regressão simples
     const n=l.length,mx=l.reduce((s,w)=>s+w.x+w.w/2,0)/n,my=l.reduce((s,w)=>s+w.y+w.h/2,0)/n;
-    let num=0,den=0;l.forEach(w=>{const x=w.x+w.w/2-mx;num+=x*(w.y+w.h/2-my);den+=x*x});if(den)sl.push(num/den)});
-  if(!sl.length)return 0;sl.sort((a,b)=>a-b);const m=sl[sl.length>>1];return Math.abs(m)>0.1?0:m;
+    let num=0,den=0;l.forEach(w=>{const x=w.x+w.w/2-mx;num+=x*(w.y+w.h/2-my);den+=x*x});if(den){const k=num/den;if(Math.abs(k)<0.1)out.push({y:my,k})}});
+  return out;
 }
+function mediana(a){if(!a.length)return 0;a=[...a].sort((x,y)=>x-y);return a[a.length>>1]}
 function palavrasDosBlocos(data){
   const ws=[];
   (data.blocks||[]).forEach((b,bi)=>(b.paragraphs||[]).forEach((p,pi)=>(p.lines||[]).forEach((l,li)=>(l.words||[]).forEach(w=>{if(w.text&&w.text.trim()&&w.bbox)ws.push({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim(),ln:bi+'.'+pi+'.'+li})}))));
@@ -299,8 +299,9 @@ function palavrasDosBlocos(data){
 }
 function linhasDePalavras(ws){
   if(!ws.length) return '';
-  const k=inclinacao(ws);
-  ws=ws.map(w=>({...w,y:w.y-k*(w.x+w.w/2)}));
+  const inc=inclinacoes(ws), geral=mediana(inc.map(i=>i.k));
+  const alt=Math.max(...ws.map(w=>w.y+w.h))-Math.min(...ws.map(w=>w.y)), raio=Math.max(200,alt*0.12);
+  ws=ws.map(w=>{const perto=inc.filter(i=>Math.abs(i.y-(w.y+w.h/2))<raio).map(i=>i.k);const k=perto.length>=2?mediana(perto):geral;return {...w,y:w.y-k*(w.x+w.w/2)}});
   const hs=ws.map(w=>w.h).sort((a,b)=>a-b), hm=hs[hs.length>>1]||20;
   ws.sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
   const rows=[];
@@ -336,9 +337,11 @@ async function lerArquivo(file,aviso){
     const bons=['nome','cpf','sexo','dados do servidor','requisitad','telefone','orgao','endereco'].filter(w=>nt.includes(w)).length;
     if(CFG.ocrSempre||t.replace(/\s/g,'').length<40||bons<4){ // escaneado ou texto embutido ruim: OCR
       aviso(`página ${p} de ${pdf.numPages} — lendo imagem (OCR)…`);
-      const vp=page.getViewport({scale:2.5}); const cv=document.createElement('canvas');
+      const vp=page.getViewport({scale:3.2}); const cv=document.createElement('canvas');
       cv.width=vp.width; cv.height=vp.height;
-      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      const ctx=cv.getContext('2d',{willReadFrequently:true});
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      melhoraImagem(cv,ctx);
       t=await ocr(cv);
     }
     out.push(t);
@@ -351,8 +354,21 @@ function nomeDoArquivo(n){
   return n.replace(/\.[a-z0-9]+$/i,'').replace(/[A-Za-z]*\d[\w]*/g,' ').replace(/[_]+/g,' ').replace(/\b\d{1,2}[ .\/-]\d{1,2}[ .\/-]\d{2,4}\b/g,' ')
    .replace(/\bguias?\b/ig,' ').replace(/\d+/g,' ').replace(/[-–]+/g,' ').replace(/\s+/g,' ').trim();
 }
-function limpaValor(v){return (v||'').replace(/^[\s:\-–.|]+/,'').replace(/[\s:\-–|]+$/,'').replace(/\s{2,}/g,' ').trim()}
+const semRepetida=t=>String(t||'').replace(/(^|\s)(\S+)(?:\s+\2)+(?=\s|$)/gi,'$1$2');
+function limpaValor(v){return semRepetida(v||'').replace(/^[\s:\-–.|]+/,'').replace(/[\s:\-–|]+$/,'').replace(/\s{2,}/g,' ').trim()}
 const DATA_RE=/\b\d{1,2}\/\d{1,2}\/\s?\d{4}\b/g;
+const dig=s=>String(s).replace(/[Oo]/g,'0').replace(/[lIi|!]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(/Z/g,'2').replace(/g/g,'9');
+function achaData(txt,minAno,maxAno){
+  const re=/([0-9OolIiSBZg|]{1,2})\s*[\/\-.]\s*([0-9OolIiSBZg|]{1,2})\s*[\/\-.]\s*([0-9OolIiSBZg|]{4})/g;let m;
+  while((m=re.exec(String(txt)))){const d=+dig(m[1]),me=+dig(m[2]),a=+dig(m[3]);
+    if(d>=1&&d<=31&&me>=1&&me<=12&&a>=(minAno||1900)&&a<=(maxAno||2100))return `${String(d).padStart(2,'0')}/${String(me).padStart(2,'0')}/${a}`}
+  return '';
+}
+function achaTel(txt){
+  const re=/\(?\s*([0-9OlIS]{2})\s*\)?\s*([0-9OlIS]{4,5})\s*[-–.\s]?\s*([0-9OlIS]{4})(?![0-9])/g;let m;
+  while((m=re.exec(String(txt)))){const a=dig(m[1]),b=dig(m[2]),c=dig(m[3]);if(/^\d+$/.test(a+b+c)&&+a>=11)return `(${a}) ${b}-${c}`}
+  return '';
+}
 function cortaRotulos(linha,rots){ // rots: [[chave, regex do rótulo]]
   const nl=normC(linha), achados=[];
   rots.forEach(([k,re])=>{const m=new RegExp('(^|[^a-z0-9])('+re+')(?![a-z0-9])').exec(nl);if(m)achados.push({k,ini:m.index+m[1].length,fim:m.index+m[0].length})});
@@ -360,12 +376,42 @@ function cortaRotulos(linha,rots){ // rots: [[chave, regex do rótulo]]
   const out={};achados.forEach((a,i)=>{const v=limpaValor(linha.slice(a.fim,i+1<achados.length?achados[i+1].ini:linha.length).replace(/^[!|'‘`]+/,''));if(v)out[a.k]=v});
   return {out,primeiro:achados.length?achados[0].ini:-1};
 }
+const EXAMES_BASE={'10101012':'Avaliação clínica','40303136':'Sangue oculto, pesquisa nas fezes','40303110':'Parasitológico nas fezes'};
+function dicExames(){return Object.assign({},EXAMES_BASE,LS.get('exames',{}))}
+function aprendeExame(cod,desc){if(!/^\d{8}$/.test(cod)||EXAMES_BASE[cod])return;if(norm(desc).replace(/[^a-z]/g,'').length<8)return;const d=LS.get('exames',{});if(!d[cod]){d[cod]=desc;LS.set('exames',d)}}
+function parecido(a,b){const ta=norm(a).split(/[^a-z]+/).filter(t=>t.length>=4),tb=new Set(norm(b).split(/[^a-z]+/).filter(t=>t.length>=4));if(!ta.length||!tb.size)return false;return ta.filter(t=>tb.has(t)||[...tb].some(u=>u.slice(0,5)===t.slice(0,5))).length>=Math.min(2,tb.size)}
+function corrigeCodigo(cd,desc){
+  const dic=dicExames(); if(dic[cd])return cd;
+  const perto=Object.keys(dic).filter(k=>k!=='10101012'&&[...k].filter((x,i)=>x!==cd[i]).length===1);
+  return perto.length===1&&parecido(desc||'',dic[perto[0]])?perto[0]:cd;
+}
 function nomeExame(cod,resto){
+  resto=semRepetida(resto).replace(/(\s-)+/g,' -');
+  const fim=x=>x.replace(/\s+-\s+/g,' ').replace(/\s+-$/,'').replace(/[\s,;:.-]+$/,'').trim();
   let [nome,obs]=resto.split(/\s*-?\s*[o0@]bserv\S*\s*:?\s*-?\s*/i);
-  nome=limpaValor((nome||'').replace(/\s{4,}.*$/,''));obs=limpaValor((obs||'').replace(/\s{4,}.*$/,'').replace(/\.\s*$/,''));
-  if((!nome||/^em consultorio/.test(norm(nome)))&&obs) return {cod,desc:obs};
-  if(/^em consultorio/.test(norm(nome))) nome='Consulta em consultório';
-  return {cod,desc:nome||obs||cod};
+  nome=limpaValor((nome||'').replace(/\s{4,}.*$/,''));
+  obs=limpaValor((obs||'').replace(/\s{4,}.*$/,'').replace(/^\s*aten\S*\s*:?\s*/i,'').replace(/\(.*$/,'').replace(/\.\s*$/,''));
+  const letras=t=>norm(t).replace(/[^a-z]/g,'').length;
+  if(/^em consult/.test(norm(nome))||!nome){
+    if(obs&&letras(obs)>=6) return {cod,desc:fim(obs)};
+    return {cod,desc:'Consulta em consultório'};
+  }
+  return {cod,desc:fim(nome)};
+}
+function extrairSIASSvarias(linhas,arquivo){
+  // corta em pedaços: cada vez que começa outra guia depois de "Exames Requisitados"
+  const n=linhas.map(normC),partes=[];let ini=0,viuExame=false;
+  n.forEach((l,i)=>{if(/requisitad/.test(l))viuExame=true;else if(viuExame&&/subsistema|solicita\S*\s+de\s+exa|data de emiss|^\W*siass/.test(l)){partes.push(linhas.slice(ini,i));ini=i;viuExame=false}});
+  partes.push(linhas.slice(ini));
+  const rs=partes.filter(p=>p.length>3).map(p=>extrairSIASS(p,arquivo));
+  if(rs.length<2) return rs[0]||extrairSIASS(linhas,arquivo);
+  const qtd=r=>Object.keys(r.campos).length;
+  const base=rs.slice().sort((a,b)=>qtd(b)-qtd(a))[0];
+  const out={...base,campos:{...base.campos},exames:[],ordem:[...base.ordem]};
+  rs.forEach(r=>Object.keys(r.campos).forEach(k=>{if(!out.campos[k]){out.campos[k]=r.campos[k];if(!out.ordem.includes(k))out.ordem.push(k)}}));
+  const vistos=new Set();rs.forEach(r=>r.exames.forEach(e=>{if(!vistos.has(e.cod)){vistos.add(e.cod);out.exames.push(e)}}));
+  if(out.exames.length&&!out.ordem.includes('exames'))out.ordem.push('exames');
+  return out;
 }
 function extrairSIASS(linhas,arquivo){
   const c={},ordem=[];const pos=k=>{if(c[k]&&!ordem.includes(k))ordem.push(k)};
@@ -399,10 +445,10 @@ function extrairSIASS(linhas,arquivo){
     if(/(^|\s)uf(\s|$)/.test(l)||/^\W*munic/.test(l)||/telefone/.test(l)){
       const {out,primeiro}=cortaRotulos(L,[['cidade','munic\\S*'],['uf','uf'],['telefone','telefone']]);
       if(!out.cidade&&primeiro>0){const v=limpaValor(L.slice(0,primeiro));if(v&&!/^munic/i.test(v))out.cidade=v}
-      if(out.telefone&&!/\d/.test(out.telefone))delete out.telefone;
+      if(out.telefone){const t=achaTel(out.telefone);if(t)out.telefone=t;else delete out.telefone}
       ['cidade','uf','telefone'].forEach(k=>{if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
     }
-    if(!c.telefone){const m=L.match(/\(?\d{2}\)?\s?\d{4,5}-\d{4}/);if(m){c.telefone=m[0];pos('telefone')}}
+    if(!c.telefone){const t=achaTel(L.replace(/^[^(\d]*?(?=\(|\d{2}\D)/,''));if(t&&/telefone|\(/.test(normC(L)+L)){c.telefone=t;pos('telefone')}}
   }
   // dados do servidor
   for(let i=iServ;iServ>=0&&i<iEx;i++){
@@ -412,7 +458,7 @@ function extrairSIASS(linhas,arquivo){
     if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
     if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L.replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));pos('nome');delete c._nomeProx;continue}
     const {out}=cortaRotulos(L,[['sexo','sexo'],['nascimento','data\\s*de\\s*nasc\\S*|nascimento'],['cpf','cpf'],['rg','rg']]);
-    if(out.nascimento){const d=out.nascimento.match(DATA_RE);if(d)out.nascimento=d[0].replace(/\s/g,'')}
+    if(out.nascimento){const d=achaData(out.nascimento,1920,new Date().getFullYear()-14);if(d)out.nascimento=d;else delete out.nascimento}
     if(out.cpf)out.cpf=out.cpf.replace(/[^\d.\-]/g,'');
     if(out.rg)out.rg=out.rg.replace(/[^\dXx.\-]/g,'');
     ['sexo','nascimento','idade','cpf','rg'].forEach(k=>{if(k==='idade'&&c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
@@ -421,9 +467,10 @@ function extrairSIASS(linhas,arquivo){
   }
   delete c._nomeProx;
   ['nome','orgao'].forEach(k=>{if(c[k])c[k]=c[k].replace(/^[^A-Za-zÀ-ú0-9]+/,'').replace(/\s+[^A-Za-zÀ-ú0-9\s]+$/,'').trim()});
+  if(c.nome)c.nome=c.nome.replace(/[^A-Za-zÀ-ú]+$/,'');
   const tudo=linhas.join('\n'),serv=linhas.slice(Math.max(iServ,0),iEx).join('\n');
-  if(!c.nascimento){const ds=(serv.match(DATA_RE)||[]).map(d=>d.replace(/\s/g,'')).filter(d=>d!==c.data&&!(c.periodo||'').includes(d));if(ds[0]){c.nascimento=ds[0];pos('nascimento')}}
-  if(!c.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?\d{4,5}-\d{4}\b/);if(m){c.telefone=m[0];pos('telefone')}}
+  if(!c.nascimento){const d=achaData(serv,1920,new Date().getFullYear()-14);if(d){c.nascimento=d;pos('nascimento')}}
+  if(!c.telefone){const org=linhas.slice(Math.max(iOrg,0),iServ>0?iServ+2:iEx).join(' ');const t=achaTel(org)||achaTel(tudo);if(t){c.telefone=t;pos('telefone')}}
   if(!c.cidade&&/rio de janeiro/i.test(tudo)){c.cidade='Rio de Janeiro';pos('cidade')}
   if(c.nome&&/comiss|ministerio|nacional|instituto|universidade|fundacao|secretaria/.test(norm(c.nome))&&!c.orgao){c.orgao=c.nome;delete c.nome}
   if(!c.cpf){const m=linhas.slice(iServ>0?iServ:0,iEx).join(' ').match(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/);if(m){c.cpf=m[0];pos('cpf')}}
@@ -434,18 +481,23 @@ function extrairSIASS(linhas,arquivo){
   const ini=iEx<linhas.length?iEx+1:Math.max(iServ,0);
   for(let i=ini;i<linhas.length;i++){
     if(/\bcpf\b|\brg\b|telefone|uorg/.test(n[i]))continue;
-    const m=linhas[i].match(/(?:^|[^\w])([0-9OlI]{8})\s*[-–]\s*(.*)$/);
+    const m=linhas[i].match(/(?:^|[^\w])((?:[0-9OlI]\s?){7}[0-9OlI])\s*[-–—~]+\s*(.*)$/)||linhas[i].match(/^\W*((?:[0-9OlI]\s?){7}[0-9OlI])\s+([A-Za-zÀ-ú].*)$/);
     if(!m)continue;
-    let cd=m[1].replace(/O/g,'0').replace(/[lI]/g,'1');
-    if([...cd].filter((d,i)=>d!=='10101012'[i]).length===1)cd='10101012';
+    const bruto=m[1].replace(/\s/g,'').replace(/O/g,'0').replace(/[lI]/g,'1');
+    if(!/^\d{8}$/.test(bruto))continue;
+    let ex=nomeExame(bruto,m[2]);
+    const cd=corrigeCodigo(bruto,ex.desc); ex.cod=cd;
     if(vistos.has(cd))continue;vistos.add(cd);
-    const ex=nomeExame(cd,m[2]);
-    if(cd==='10101012')ex.desc='Avaliação clínica';
+    const dic=dicExames();
+    if(cd!=='10101012'&&dic[cd]&&norm(ex.desc).replace(/[^a-z]/g,'').length<8)ex.desc=dic[cd];
+    else if(cd!=='10101012')aprendeExame(cd,ex.desc);
     exames.push(ex);
   }
   if(!exames.length&&iEx<linhas.length){
-    const resto=n.slice(iEx+1,iEx+8).join(' ');
-    if(/consult|avali|aval|clini|10101|0101012/.test(resto))exames.push({cod:'10101012',desc:'Avaliação clínica'});
+    const txt=linhas.slice(iEx+1,iEx+3).map(l=>l.replace(/\s{4,}.*$/,'')).join(' ').replace(/\s+/g,' ').trim();
+    const limpo=txt.replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s+\S{0,3}\W*$/,'');
+    const bom=limpo.split(/\s+/).filter(w=>/^[A-Za-zÀ-ú]{4,}/.test(w)).length>=2;
+    exames.push({cod:'',desc:bom?limpo:'',alerta:true});
   }
   if(exames.length)ordem.push('exames');
   if(c.codigo)ordem.push('codigo');
@@ -460,7 +512,7 @@ function extrair(texto,arquivo){
   return r;
 }
 function extrair0(texto,arquivo){
-  {const nt=normC(texto);if(/siass|subsistema|uorg|requisitad|dados do serv|orgao respons/.test(nt))return extrairSIASS(texto.split(/\r?\n/).filter(l=>l.trim()),arquivo)}
+  {const nt=normC(texto);if(/siass|subsistema|uorg|requisitad|dados do serv|orgao respons/.test(nt))return extrairSIASSvarias(texto.split(/\r?\n/).filter(l=>l.trim()),arquivo)}
   const linhas=texto.split(/\r?\n/).map(l=>l.replace(/\t/g,'    ')).filter(l=>l.trim());
   const campos={},pos={};
   linhas.forEach((linha,i)=>{
@@ -547,20 +599,21 @@ function pedacos(t){
   });
   if(atual.trim())out.push(atual);return out;
 }
-const ABREV={fed:'Federal',educ:'de Educação',tecnol:'Tecnológica',tec:'Tecnológico',univ:'Universidade',inst:'Instituto',min:'Ministério',sec:'Secretaria',nac:'Nacional',reg:'Regional',coord:'Coordenação',ger:'Gerência',div:'Divisão',dep:'Departamento',depto:'Departamento',adm:'Administração',superint:'Superintendência',hosp:'Hospital',fund:'Fundação',av:'Avenida',r:'Rua'};
+const ABREV={brasil:'Brasileiro de',geog:'Geografia',estat:'Estatística',fed:'Federal',educ:'de Educação',tecnol:'Tecnológica',tec:'Tecnológico',univ:'Universidade',inst:'Instituto',min:'Ministério',sec:'Secretaria',nac:'Nacional',reg:'Regional',coord:'Coordenação',ger:'Gerência',div:'Divisão',dep:'Departamento',depto:'Departamento',adm:'Administração',superint:'Superintendência',hosp:'Hospital',fund:'Fundação',av:'Avenida',r:'Rua'};
 function expande(t){
   return t.replace(/\$(?=[\s,.])/g,'S').replace(/([A-Za-zÀ-ú]{2,})\.(?=[A-Za-zÀ-ú])/g,'$1. ')
     .replace(/\b([A-Za-zÀ-ú]{2,9})\.(?=\s|,|$)/g,(m,w)=>ABREV[w.toLowerCase()]||m)
     .replace(/\s+,/g,',');
 }
+const ACENTO_MIN={parasitologico:'parasitológico',estatistica:'estatística',clinica:'clínica',avaliacao:'avaliação',consultorio:'consultório',hemograma:'hemograma',glicemia:'glicemia',acido:'ácido',urico:'úrico',eletrocardiograma:'eletrocardiograma',oftalmologico:'oftalmológico',audiometria:'audiometria',torax:'tórax'};
 function limpaFala(t){
-  t=expande(t);
+  t=expande(t).replace(/\b[A-Za-z]+\b/g,w=>{const a=ACENTO_MIN[w.toLowerCase()];return a?(w[0]===w[0].toUpperCase()?a[0].toUpperCase()+a.slice(1):a):w});
   return t.replace(/\(([^)]*)\)/g,', $1,').replace(/;/g,',').replace(/\s*,\s*,/g,',').replace(/,\s*\./g,'.')
    .replace(/(\d)\s?mg\b/gi,'$1 miligramas').replace(/(\d)\s?ml\b/gi,'$1 mililitros').replace(/(\d)\s?kg\b/gi,'$1 quilos')
    .replace(/([a-zà-ú])\s*\/\s*([a-zà-ú])/gi,'$1 ou $2').replace(/\s+/g,' ').replace(/\s+([,.])/g,'$1').trim();
 }
 const SIGLAS=/^(CPF|CEP|CID|CRM|DDD|SUS|RG|PA|INSS|SIASS|ANS|TUSS|CBO|RX|ECG|EEG|PSA|TSH|HIV|HCV|VDRL|TGO|TGP|GGT|HDL|LDL|RJ|SP|MG|ES|UF|ASO)$/;
-const ACENTO={SAUDE:'SAÚDE',MINISTERIO:'MINISTÉRIO',ORGAO:'ÓRGÃO',SERVICO:'SERVIÇO',SERVICOS:'SERVIÇOS',TECNICO:'TÉCNICO',TECNICA:'TÉCNICA',ORCAMENTO:'ORÇAMENTO',FISICA:'FÍSICA',PUBLICO:'PÚBLICO',PUBLICA:'PÚBLICA',CIENCIA:'CIÊNCIA',ENERGIA:'ENERGIA',UNIAO:'UNIÃO',JUSTICA:'JUSTIÇA',POLICIA:'POLÍCIA',AGENCIA:'AGÊNCIA',ECONOMIA:'ECONOMIA',FAZENDA:'FAZENDA',TECNOLOGIA:'TECNOLOGIA',INSTITUICAO:'INSTITUIÇÃO',FUNDACAO:'FUNDAÇÃO'};
+const ACENTO={SAUDE:'SAÚDE',MINISTERIO:'MINISTÉRIO',ORGAO:'ÓRGÃO',SERVICO:'SERVIÇO',SERVICOS:'SERVIÇOS',TECNICO:'TÉCNICO',TECNICA:'TÉCNICA',ORCAMENTO:'ORÇAMENTO',FISICA:'FÍSICA',PUBLICO:'PÚBLICO',PUBLICA:'PÚBLICA',CIENCIA:'CIÊNCIA',ENERGIA:'ENERGIA',UNIAO:'UNIÃO',JUSTICA:'JUSTIÇA',POLICIA:'POLÍCIA',AGENCIA:'AGÊNCIA',ECONOMIA:'ECONOMIA',FAZENDA:'FAZENDA',TECNOLOGIA:'TECNOLOGIA',INSTITUICAO:'INSTITUIÇÃO',FUNDACAO:'FUNDAÇÃO',ESTATISTICA:'ESTATÍSTICA',GERENCIA:'GERÊNCIA',TECNOLOGICA:'TECNOLÓGICA',TECNOLOGICO:'TECNOLÓGICO'};
 const acentua=w=>ACENTO[w]||w.replace(/CAO$/,'ÇÃO').replace(/COES$/,'ÇÕES').replace(/([^AEIOUÃÇ])AO$/,'$1ÃO');
 const suaviza=t=>t.replace(/\b[A-Z]{4,}\b/g,acentua).replace(/\b[A-ZÀ-Ý]{2,}\b/g,w=>SIGLAS.test(w)?w:(/^(DA|DE|DO|DAS|DOS|E)$/.test(w)?w.toLowerCase():w[0]+w.slice(1).toLowerCase()));
 function falar(texto){
@@ -678,7 +731,16 @@ function digitosFalados(v){
   const d=String(v).replace(/\D/g,''); if(!d) return v;
   return d.length<=4?d.split('').join(' '):d.match(/.{1,3}/g).join(' ');
 }
+const DIG=['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove'];
+const porExtenso=d=>d.split('').map(x=>DIG[+x]).join(' ');
 function telFalado(v){
+  const d0=String(v).replace(/\D/g,'');
+  if(d0.length===10) return `${d0.slice(0,2)}, ${porExtenso(d0.slice(2,6))}, ${porExtenso(d0.slice(6))}`;
+  if(d0.length===11) return `${d0.slice(0,2)}, ${porExtenso(d0.slice(2,7))}, ${porExtenso(d0.slice(7))}`;
+  if(d0.length===8||d0.length===9) return `${porExtenso(d0.slice(0,d0.length-4))}, ${porExtenso(d0.slice(-4))}`;
+  return telFalado0(v);
+}
+function telFalado0(v){
   const d=String(v).replace(/\D/g,'');
   if(d.length===11) return d.slice(0,2)+' '+d[2]+' '+pares(d.slice(3));
   if(d.length===10) return d.slice(0,2)+' '+pares(d.slice(2));
@@ -753,7 +815,8 @@ function narracaoSIASS(g){
   else if(c.nascimento) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)}.`);
   else if(c.cpf) f.push(`${ela} tem o CPF ${digitosFalados(c.cpf)}.`);
   if(c.orgao){
-    let t=`${ela} trabalha ${noNa(c.orgao)} ${c.orgao}`;
+    const org=expande(c.orgao);
+    let t=`${ela} trabalha ${noNa(org)} ${org}`;
     if(c.telefone) t+=`, cujo telefone é ${telFalado(c.telefone)}`;
     if(c.cidade) t+=`, ${/^rio\b/.test(norm(c.cidade))?'no':'em'} ${c.cidade}`;
     f.push(t+'.');
@@ -761,7 +824,9 @@ function narracaoSIASS(g){
   const n=g.exames.length;
   if(n){
     f.push(`Os exames que ${ela.toLowerCase()} fez: ${n===1?'um exame':n+' exames'}.`);
-    g.exames.forEach(e=>f.push(`${minusc(e.desc).replace(/^./,x=>x.toUpperCase())}${e.cod?', código '+pares(e.cod):''}.`));
+    g.exames.forEach(e=>{
+      if(e.alerta){f.push(`Atenção: tem exame que eu não consegui ler direito${e.desc?', parece ser '+minusc(e.desc):''}. Confira na guia.`);return}
+      f.push(`${minusc(e.desc).replace(/^./,x=>x.toUpperCase())}${e.cod?', código '+pares(e.cod):''}.`)});
   } else f.push('Não achei exames na guia.');
   return f.join(' ');
 }
@@ -882,7 +947,7 @@ function render(){
   $('#contagem').textContent=GUIAS.length?`${GUIAS.length} ${GUIAS.length===1?'carregada':'carregadas'}`:'nenhuma';
   $('#lista').innerHTML=GUIAS.map(g=>{
     const c=g.campos;
-    const sub=[c.dataArquivo||dataDoArquivo(g.arquivo),c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
+    const sub=[g.exames.some(e=>e.alerta)?'⚠ exame não lido':'',c.dataArquivo||dataDoArquivo(g.arquivo),c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
     const rows=CAMPOS.map(cp=>`<tr><td>${esc(cp.rot)}</td><td contenteditable data-k="${cp.k}">${esc(c[cp.k]||'')}</td></tr>`).join('');
     return `<article class="guia${SEL&&SEL.includes(g.id)?' sel':''}" data-id="${g.id}">
       <div class="cab"><span class="pega" title="Arraste pra mudar a ordem">⠿</span><span class="num">${SEL?(SEL.includes(g.id)?SEL.indexOf(g.id)+1:'·'):GUIAS.indexOf(g)+1}</span><div class="quem"><div class="nome">${esc(nomeG(g))}</div><div class="sub">${esc(sub)}</div></div>
@@ -891,7 +956,7 @@ function render(){
       <button class="ico" data-a="abrir" title="Ver e corrigir dados">${ICO.abrir}</button>
       <button class="ico" data-a="apagar" title="Apagar guia">${ICO.lixo}</button></div>
       <div class="corpo"><table>${rows}</table>
-      <ol class="exs">${g.exames.map(e=>`<li>${esc(e.desc)} ${e.cod?`<span class="cod">${esc(e.cod)}</span>`:''}</li>`).join('')||'<li>nenhum exame encontrado</li>'}</ol>
+      <ol class="exs">${g.exames.map(e=>`<li${e.alerta?' style="color:var(--rec);font-weight:700"':''}>${e.alerta?'⚠ NÃO LIDO — confira: ':''}${esc(e.desc)} ${e.cod?`<span class="cod">${esc(e.cod)}</span>`:''}</li>`).join('')||'<li>nenhum exame encontrado</li>'}</ol>
       <div class="rodape-corpo"><button class="lnk" data-a="bruto">Ver texto lido do PDF</button><span class="cod">${esc(g.arquivo)}</span></div>
       <div class="bruto">${esc(g.texto)}</div></div></article>`}).join('');
   marcarAtual();
