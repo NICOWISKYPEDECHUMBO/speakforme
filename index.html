@@ -1,993 +1,223 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bot das Guias</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<style>
-:root{
-  --fundo:#e6ecee; --papel:#fff; --tinta:#14232b; --suave:#5b6d75; --linha:#c9d4d8;
-  --petroleo:#1f4e5f; --petroleo2:#173b48; --sinal:#f2b134; --rec:#d8473b; --ok:#2f8a5b;
-}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{font-family:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;background:var(--fundo);color:var(--tinta);font-size:16px;line-height:1.45}
-button{font:inherit;cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible,[contenteditable]:focus-visible{outline:3px solid var(--sinal);outline-offset:2px}
-.app{display:grid;grid-template-columns:minmax(340px,1fr) minmax(360px,460px);height:100vh}
-@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}}
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#12101e"><meta name="description" content="Karaokê com microfone, linhas de afinação em tempo real e avaliação vocal."><meta name="referrer" content="strict-origin-when-cross-origin"><title>VozStage — Solte a voz</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23242138'/%3E%3Crect x='12' y='5' width='8' height='15' rx='4' fill='%23fa91c1'/%3E%3Cpath d='M8 15v2a8 8 0 0016 0v-2M16 25v4' fill='none' stroke='%23fa91c1' stroke-width='2'/%3E%3C/svg%3E"><style>
+:root{color-scheme:dark;--bg:#12101e;--panel:#1c192c;--border:#353047;--pink:#f6a1cc;--cyan:#94e5df;--muted:#a6a0b6}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 65% 20%,#2b193b66,transparent 45%),var(--bg);color:#f5effa;font:14px system-ui,-apple-system,'Segoe UI',sans-serif}button,input,select{font:inherit}button{cursor:pointer;color:inherit}button:disabled{opacity:.42;cursor:not-allowed}a{color:inherit;text-decoration:none}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--cyan);outline-offset:4px}[hidden]{display:none!important}header{height:88px;padding:0 4%;border-bottom:1px solid #ffffff12;display:flex;justify-content:space-between;align-items:center}.brand{font-size:27px;letter-spacing:-1px;font-weight:800;display:flex;align-items:center}.brand>span:not(.logo){font-weight:300;color:var(--pink)}.logo{background:#e5a2d4;color:#251a35;width:34px;height:38px;border-radius:11px;display:grid;place-items:center;margin-right:10px;font-size:27px}.brand small{font-size:8px;font-weight:500;color:#9b91ad;letter-spacing:2px;margin-left:20px;border-left:1px solid var(--border);padding-left:20px}.ghost{border:0;background:transparent;font-size:11px;color:#bdb3cd}.ghost span{display:inline-grid;place-items:center;border:1px solid #5d526d;width:23px;height:23px;border-radius:50%;margin-left:12px}main{max-width:1640px;margin:auto;padding:36px 4% 0}.heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}.eyebrow{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--pink);margin:0 0 10px}h1{font-size:54px;line-height:1.1;letter-spacing:-2px;margin:0 0 13px;font-weight:650}h1 em{font-family:Georgia,serif;font-weight:400;color:var(--pink)}.subtitle{margin:0;color:var(--muted);font-size:12px}.headphone-badge{font-size:11px;border:1px solid #44344f;background:#2b1f3533;color:#c6acd0;padding:11px 17px;border-radius:30px}.layout{display:grid;grid-template-columns:minmax(250px,.95fr) minmax(430px,1.95fr) minmax(230px,.85fr);gap:20px;align-items:start}.panel{background:var(--panel);border:1px solid var(--border);border-radius:16px}.library,.stats{padding:21px}.section-label{font-size:9px;font-weight:650;letter-spacing:1.4px;color:#b4a9c6;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.section-label>span{color:var(--pink);font-size:16px}.tabs{display:flex;padding:4px;background:#110f1d;border-radius:9px;margin-bottom:19px;gap:3px}.tabs button{flex:1;padding:9px 4px;background:transparent;border:0;border-radius:6px;font-size:11px;color:#91899f}.tabs button[aria-selected=true]{color:#f5e8f9;background:#383047}.cover{height:179px;border-radius:9px;padding:17px;position:relative;overflow:hidden;background:linear-gradient(120deg,#e8afc2,#b1a0e9);color:#2c2542}.cover>span{font-size:7px;letter-spacing:1.6px;position:relative;z-index:2}.cover>div{font-size:35px;line-height:.95;letter-spacing:-2px;font-weight:900;margin-top:13px;position:relative;z-index:2}.cover i{font-family:Georgia,serif}.cover b{position:absolute;font-size:215px;line-height:1;right:-12px;top:1px;transform:rotate(-18deg);color:#57437c66;font-weight:400}.cover small{font-size:6px;letter-spacing:1.5px;position:absolute;bottom:12px;left:17px}h2{font-size:18px;margin:0;font-weight:600}#demo-panel>h2{margin-top:15px}.muted{font-size:11px;color:var(--muted);line-height:1.7;margin:7px 0 13px}.tags{display:flex;gap:7px}.tags span{border:1px solid #443b54;padding:4px 7px;font-size:7px;letter-spacing:.5px;border-radius:4px}.divider{height:1px;background:var(--border);margin:21px 0}.primary,.secondary{border-radius:8px;padding:13px 14px;display:flex;justify-content:center;align-items:center;gap:9px;font-size:12px;font-weight:650}.primary{background:var(--pink);color:#2c1b30;border:1px solid #f7bbdc}.primary:hover{background:#ffd0e9}.secondary{border:1px solid #53455f;background:#32293f;color:#e6d5f0}.full{width:100%}#start{margin-top:18px}label{display:block;font-size:10px;color:#c4b8d2;margin:12px 0 7px}input,select{width:100%;background:#13101f;border:1px solid #483c57;color:#e9dff3;border-radius:6px;padding:10px;font-size:11px}input[type=range]{padding:0;accent-color:var(--pink);border:0}.file-select{position:relative;border:1px dashed #786288;border-radius:7px;padding:15px 10px;text-align:center;color:var(--pink);overflow:hidden}.file-select input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}.file-art{height:100px;font-size:66px;display:grid;place-items:center;color:var(--pink);background:radial-gradient(#5c3866,transparent)}.fine,.privacy{font-size:10px;line-height:1.7;color:#a096af;margin:10px 0}.privacy{font-size:9px;color:#857991;margin-top:15px}.status{font-size:11px;line-height:1.7;color:#d1bddc;margin:13px 0 0}.text-link{display:block;font-size:10px;color:var(--pink);margin-top:12px}#loadYoutube{margin-top:10px}#videoWrap{height:215px;min-width:200px;margin-top:14px;background:#0a0810;border-radius:8px;overflow:hidden}#videoWrap iframe{width:100%;height:100%;border:0}.inline-actions{display:flex;justify-content:space-between;gap:10px}.text-button{border:0;background:none;color:var(--pink);padding:0;font-size:10px}.mic-level{margin-top:12px}.mic-level>span{font-size:9px;color:#a99cb7}.meter{height:5px;background:#3b3049;border-radius:4px;margin-top:8px;overflow:hidden}.meter i{display:block;height:100%;width:0;background:var(--cyan);transition:width .1s}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}details{margin-top:18px;font-size:11px;color:#bcaacb}summary{cursor:pointer}.check{display:flex;gap:8px;align-items:center;line-height:1.5}.check input{width:14px;height:14px;accent-color:var(--pink)}.stage{background:radial-gradient(ellipse at 52% 30%,#43224c55,transparent 65%),#171222;border:1px solid #493450;border-radius:16px;overflow:hidden;min-width:0;position:relative}.stage-top{display:flex;justify-content:space-between;align-items:center;padding:19px 21px;border-bottom:1px solid #ffffff09}.stage-top>span{color:#d3accd;font-size:8px;letter-spacing:1.5px}.controls{display:flex;gap:8px}.icon{width:29px;height:29px;border:1px solid #55455c;border-radius:7px;background:#251c2d;color:#dfc3e0;font-size:16px;display:grid;place-items:center}.song-heading{text-align:center;padding:28px 15px 22px}.mode-badge{font-size:7px;letter-spacing:1.3px;padding:5px 8px;border:1px solid #514756;border-radius:4px;color:#d0bdcf}.song-heading h2{font-size:27px;letter-spacing:-.6px;margin:14px 0 9px;overflow-wrap:anywhere}.song-heading p{font-size:10px;color:#ad92b4;line-height:1.7;margin:0}.pitch-board{position:relative;height:305px;border-top:1px solid #ffffff0a;border-bottom:1px solid #ffffff0a;background:#100f1a66}canvas{width:100%;height:100%;display:block}.board-idle{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(#261a32b8,transparent);pointer-events:none}.voice-orb{display:grid;place-items:center;width:70px;height:70px;border:1px solid #cfa6ce;border-radius:50%;color:#ffd7f3;font-size:42px;background:radial-gradient(circle at 30% 20%,#b771b3,#51315e);box-shadow:0 0 55px #e895cc33}.board-idle h3{font-family:Georgia,serif;font-weight:400;font-size:29px;margin:16px 0 8px}.board-idle p{font-size:10px;color:#c4aecd;margin:0}#feedback{position:absolute;left:10px;right:10px;bottom:13px;font-size:8px;letter-spacing:1.4px;text-align:center;color:var(--pink);pointer-events:none}.lyrics{text-align:center;min-height:154px;padding:25px 18px 16px;background:linear-gradient(180deg,#341c3a11,#4f2a451e)}.lyrics .eyebrow{color:#91769e;font-size:7px;letter-spacing:1.8px}#lyricLine{font-size:22px;line-height:1.6;font-weight:550;letter-spacing:-.5px;color:#d9c4e4}#lyricLine .sung{color:#f6a1cc}#lyricLine .current{color:white;text-shadow:0 0 17px #fa85da;border-bottom:2px solid #f6a1cc}#nextLyric{font-size:11px;color:#8f789e;line-height:1.6;margin:7px 0}#lyricLine span{display:inline-block;margin-right:5px}.transport{padding:17px 24px 21px}.times{display:flex;justify-content:space-between;font-size:9px;color:#bca9c5;font-variant-numeric:tabular-nums;margin-bottom:9px}progress{width:100%;height:4px;display:block;appearance:none;border:0;background:#47354f;border-radius:3px;overflow:hidden}progress::-webkit-progress-bar{background:#47354f}progress::-webkit-progress-value{background:var(--pink)}progress::-moz-progress-bar{background:var(--pink)}.transport-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:17px;font-size:8px;color:#96859e}.transport-bottom kbd{font:7px system-ui;border:1px solid #4c3b59;border-radius:3px;padding:3px 4px;margin-right:5px}.pink-dot{width:6px;height:6px;border-radius:50%;background:var(--pink);box-shadow:0 0 15px #f6a1cc77}.small-label{font-size:8px;letter-spacing:1.5px;color:#a493b4;margin:26px 0 8px}.pitch-readout strong{display:block;font-size:49px;line-height:1.1;font-weight:400;letter-spacing:-2px}.pitch-readout>span{display:block;font-size:10px;color:#a49ab4;margin-top:9px}.tuning{display:flex;align-items:center;gap:7px;margin-top:24px}.tuning>span{font-size:6px;color:#8e7b9c}.tuning>div{position:relative;flex:1;background:linear-gradient(90deg,#ab577355,#8bcfc166,#ab577355);height:6px;border-radius:5px}.tuning b{position:absolute;left:50%;top:-3px;background:var(--cyan);height:12px;width:1px}.tuning i{position:absolute;top:-3px;left:50%;height:12px;width:4px;background:#faf3fc;box-shadow:0 0 10px #fff6;border-radius:3px;transition:left .12s}.tuning-caption{font-size:9px;text-align:center;color:#bfa5ce;margin-top:13px;min-height:15px}.metric{display:flex;justify-content:space-between;gap:10px;font-size:10px;margin:18px 0;color:#b3a6c1}.metric b{font-weight:500;color:#e1d6eb}.bar{height:4px;background:#3d3049;margin-top:-7px;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--cyan);width:0;transition:width .2s}.score-card{background:#302139;border:1px solid #563a59;border-radius:9px;padding:16px;margin-top:23px}.score-card>span{font-size:7px;letter-spacing:1.2px;color:#cfa5c8}.score-card>strong{font-size:39px;font-weight:400;display:block;color:var(--pink);margin-top:5px}.score-card small{font-size:13px;margin-left:5px;color:#997f9f}.score-card p{font-size:9px;line-height:1.6;color:#b295bd;margin:6px 0 0}.howto{padding:25px 7px}.howto .section-label{font-size:8px;letter-spacing:1px}.legend{display:flex;align-items:center;gap:9px;font-size:9px;color:#c1afcd;margin:12px 0}.legend i{width:22px;height:7px;border-radius:4px;background:var(--cyan)}.legend.voice i{height:3px;background:var(--pink)}.howto>p{font-size:10px;line-height:1.8;color:#a391b2;margin:16px 0}.tip{display:flex;gap:11px;border-top:1px solid #34283e;padding-top:16px;color:var(--pink);font-size:24px}.tip span{font-size:10px;color:#a997b7;line-height:1.7}.tip b{color:#d5c0e0;font-weight:500}footer{border-top:1px solid #ffffff10;padding:22px 0;margin-top:28px;display:flex;justify-content:space-between;gap:20px;font-size:8px;letter-spacing:.6px;color:#81708e}dialog{color:#f5eaf9;background:#24192f;border:1px solid #6a4a6b;border-radius:20px;max-width:520px;width:calc(100% - 30px);padding:33px;max-height:90vh;box-shadow:0 30px 130px #0009}dialog::backdrop{background:#0b0615d9;backdrop-filter:blur(9px)}.close{position:absolute;right:12px;top:12px}dialog h2{font-size:29px;margin:12px 0}dialog h3{font-size:16px;margin-top:25px}dialog p,dialog li{font-size:12px;color:#c4abc9;line-height:1.8}dialog li{margin:12px 0}dialog ol{padding-left:20px}.final-score{display:flex;align-items:baseline;gap:8px;margin:10px 0;color:var(--pink)}.final-score strong{font-size:82px;line-height:1.2;font-weight:300}.final-score span{font-size:20px;color:#a18aa9}.result-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:20px 0;border-top:1px solid #59405f;border-bottom:1px solid #59405f;margin:20px 0}.result-stats span{font-size:9px;color:#bfa6c8}.result-stats b{font-size:20px;display:block;font-weight:500;color:#f0d5ef;margin-bottom:8px}dialog .primary{margin-top:22px}.stage:fullscreen{height:100vh;width:100vw;display:flex;flex-direction:column;max-width:1400px;margin:auto;background:#171222;border:0;border-radius:0}.stage:fullscreen .pitch-board{flex:1;min-height:220px}.stage:fullscreen .song-heading{padding:18px}.stage:fullscreen .lyrics{min-height:125px}
+@media(max-width:1190px){.layout{grid-template-columns:260px minmax(350px,1fr)}.analysis-column{grid-column:1/-1;display:grid;grid-template-columns:1.2fr 1fr;gap:25px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:0 25px}.stats .section-label{grid-column:1/-1}.stats .small-label{margin-top:8px}.stats .pitch-readout{grid-column:1}.stats .tuning,.stats .tuning-caption{grid-column:1}.stats>.divider{display:none}.stats .score-card{grid-column:2;grid-row:2/6;margin:0}.stats>.metric,.stats>.bar{grid-column:1/-1}.howto{padding:15px 0}.stage{align-self:start}.pitch-board{height:320px}.lyrics{min-height:175px}}
+@media(max-width:680px){header{padding:0 17px;height:69px}.brand{font-size:24px}.brand small{display:none}.ghost{font-size:10px}.heading{margin-bottom:23px}.headphone-badge{display:none}main{padding:25px 15px 0}h1{font-size:43px}.eyebrow{font-size:8px}.subtitle{font-size:11px}.layout{display:flex;flex-direction:column;gap:17px}.library,.stage,.analysis-column{width:100%}.library{padding:18px}.cover{height:130px;width:130px;float:left;margin-right:17px;padding:12px}.cover>span{font-size:5px;letter-spacing:.5px}.cover>div{font-size:28px;margin-top:10px}.cover b{font-size:130px;right:-17px;top:15px}.cover small{font-size:4px;left:12px;bottom:10px;letter-spacing:.4px}#demo-panel{min-height:130px}#demo-panel>h2{margin-top:0;padding-top:15px;font-size:17px}#demo-panel .muted{font-size:10px}.tags{flex-wrap:wrap;gap:5px}.tags span{font-size:6px}.divider{clear:both}.analysis-column{display:block}.stats{padding:20px}.howto{padding:24px 5px}.stage-top{padding:16px}.song-heading{padding:24px 15px}.song-heading h2{font-size:25px}.pitch-board{height:280px}.lyrics{min-height:150px}#lyricLine{font-size:21px}.transport{padding:17px 19px}.transport-bottom>span{display:none}.transport-bottom{justify-content:flex-end}footer{font-size:7px;line-height:1.8}footer span{max-width:50%}.stats .score-card{padding:13px}.result-stats b{font-size:17px}dialog{padding:29px 23px}.stage:fullscreen .lyrics{min-height:100px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 
-/* ---- lado da conversa ---- */
-.conversa{background:var(--petroleo);color:#eaf2f4;display:flex;flex-direction:column;min-height:100vh}
-.topo{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid #2c6273}
-.topo h1{font-size:1.35rem;margin:0;font-weight:700;letter-spacing:.01em}
-.lampada{width:12px;height:12px;border-radius:50%;background:#7f9aa3}
-.lampada.on{background:var(--rec);box-shadow:0 0 0 4px rgba(216,71,59,.25)}
-.lampada.fala{background:var(--sinal);box-shadow:0 0 0 4px rgba(242,177,52,.25)}
-.topo .estado{font-size:.9rem;color:#b9cdd3;margin-right:auto}
-.topo button{background:transparent;border:1px solid #4a7c8c;color:#eaf2f4;border-radius:8px;padding:6px 12px}
-.topo button:hover{background:#2a6274}
-
-.palco{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 20px 18px}
-.mic{position:relative;width:148px;height:148px;border-radius:50%;border:none;background:var(--sinal);color:var(--petroleo2);
-  box-shadow:inset 0 -8px 0 rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.25);display:grid;place-items:center;transition:transform .12s}
-.mic:active{transform:scale(.97)}
-.mic svg{width:58px;height:58px}
-.mic.on{background:var(--rec);color:#fff}
-.mic.on::before,.mic.on::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px solid rgba(216,71,59,.55);animation:onda 1.6s ease-out infinite}
-.mic.on::after{animation-delay:.8s}
-@keyframes onda{from{transform:scale(.92);opacity:1}to{transform:scale(1.3);opacity:0}}
-@media (prefers-reduced-motion:reduce){.mic.on::before,.mic.on::after{animation:none;opacity:.6}}
-.pare{border:none;border-radius:999px;background:var(--rec);color:#fff;font-weight:700;font-size:1.15rem;padding:12px 28px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
-.controles{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
-.controles[hidden]{display:none}
-.ctl{border:2px solid #9fc3cc;border-radius:999px;background:transparent;color:#fff;font-weight:700;font-size:1.05rem;padding:10px 20px}
-.ctl:hover{background:#2a6274}
-.pare:hover{filter:brightness(1.08)}
-.dica{font-size:.95rem;color:#c5d7dc;text-align:center;max-width:42ch}
-.parcial{min-height:1.5em;font-style:italic;color:#fff;text-align:center;max-width:52ch}
-.chave{display:flex;align-items:center;gap:10px;background:#245868;border-radius:999px;padding:6px 14px 6px 6px;font-size:.92rem}
-.chave input{appearance:none;width:42px;height:24px;border-radius:12px;background:#0f2f3a;position:relative;margin:0;cursor:pointer}
-.chave input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#9fb5bc;transition:left .15s}
-.chave input:checked{background:var(--ok)}
-.chave input:checked::after{left:21px;background:#fff}
-
-.log{flex:1;overflow-y:auto;padding:8px 22px 14px;display:flex;flex-direction:column;gap:10px}
-.msg{max-width:78%;padding:10px 14px;border-radius:14px;white-space:pre-wrap}
-.msg.eu{align-self:flex-end;background:#e9f0f2;color:var(--tinta);border-bottom-right-radius:4px}
-.msg.bot{align-self:flex-start;background:var(--petroleo2);border:1px solid #2f6677;border-bottom-left-radius:4px}
-.msg.bot b{color:var(--sinal);font-weight:700}
-.vazio-log{color:#9cb6bd;text-align:center;margin:auto;max-width:40ch;font-size:.95rem}
-.digitar{display:flex;gap:8px;padding:12px 22px 18px;border-top:1px solid #2c6273}
-.digitar input{flex:1;border:none;border-radius:10px;padding:11px 14px;font:inherit;background:#f4f8f9;color:var(--tinta)}
-.digitar button{border:none;border-radius:10px;padding:0 16px;background:var(--sinal);color:var(--petroleo2);font-weight:700}
-
-/* ---- lado das guias ---- */
-.guias{background:var(--fundo);display:flex;flex-direction:column;height:100vh;overflow:hidden}
-@media (max-width:900px){.guias{height:auto}}
-.guias header{padding:16px 20px 10px;display:flex;align-items:baseline;gap:10px}
-.guias h2{margin:0;font-size:1.15rem}
-.contagem{color:var(--suave);font-size:.92rem;margin-right:auto}
-.lnk{background:none;border:none;color:var(--petroleo);text-decoration:underline;padding:2px 4px;font-size:.92rem}
-.lnk.perigo{color:var(--rec)}
-.solta{margin:0 20px 12px;border:2px dashed #93a9b1;border-radius:12px;padding:18px;text-align:center;background:#f3f7f8;color:var(--suave)}
-.solta.sobre{border-color:var(--petroleo);background:#dfecef}
-.solta button{border:none;background:var(--petroleo);color:#fff;border-radius:8px;padding:9px 16px;font-weight:700;margin-bottom:6px}
-.fila{margin:0 20px 8px;font-size:.88rem;color:var(--petroleo)}
-.lista{flex:1;overflow-y:auto;padding:0 20px 20px;display:flex;flex-direction:column;gap:8px}
-.guia{flex-shrink:0;background:var(--papel);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
-.guia.atual{border-color:var(--sinal);box-shadow:0 0 0 2px var(--sinal)}
-.cab{display:flex;align-items:center;gap:10px;padding:10px 12px}
-.cab .quem{flex:1;min-width:0}
-.cab .nome{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cab .sub{font-size:.84rem;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ico{border:1px solid var(--linha);background:#f6f9fa;border-radius:8px;width:34px;height:34px;display:grid;place-items:center;color:var(--petroleo)}
-.ico:hover{background:#e3ecef}
-.ico svg{width:17px;height:17px}
-.barraSel{margin:0 20px 10px;display:flex;align-items:center;gap:8px;background:#fff6dc;border:2px solid var(--sinal);border-radius:10px;padding:8px 10px;font-size:.92rem}
-.barraSel[hidden]{display:none}
-.barraSel span{flex:1}
-.selecionando .guia{cursor:pointer}
-.selecionando .guia .setas,.selecionando .guia .ico,.selecionando .guia .pega{display:none}
-.selecionando .guia.sel{border-color:var(--sinal);background:#fffaea}
-.selecionando .num{background:#c9d4d8;color:var(--tinta)}
-.selecionando .guia.sel .num{background:var(--sinal);color:var(--petroleo2);width:30px;height:30px;font-size:1rem}
-.pega{cursor:grab;color:#9aabb1;font-size:1.2rem;user-select:none;padding:0 2px}
-.num{min-width:22px;height:22px;border-radius:50%;background:var(--petroleo);color:#fff;font-size:.78rem;display:grid;place-items:center;font-weight:700}
-.setas{display:flex;flex-direction:column;gap:2px}
-.ico.mini{width:28px;height:16px;border-radius:5px}
-.ico.mini svg{width:13px;height:13px}
-.guia.arrastando{opacity:.4}
-.guia.alvo-cima{box-shadow:0 -3px 0 var(--sinal)}
-.guia.alvo-baixo{box-shadow:0 3px 0 var(--sinal)}
-.corpo{display:none;border-top:1px solid var(--linha);padding:10px 12px 12px;font-size:.92rem}
-.guia.aberta .corpo{display:block}
-table{width:100%;border-collapse:collapse}
-td{border-bottom:1px solid #e6edf0;padding:5px 6px;vertical-align:top}
-td:first-child{width:36%;color:var(--suave)}
-td[contenteditable]{background:#fbfdfd}
-td[contenteditable]:empty::before{content:"—";color:#b5c2c7}
-.exs{margin:10px 0 0;padding-left:20px}
-.exs li{margin:2px 0}
-.cod{color:var(--suave);font-variant-numeric:tabular-nums}
-.bruto{white-space:pre-wrap;background:#f3f6f7;border-radius:8px;padding:10px;max-height:260px;overflow:auto;font-size:.82rem;margin-top:8px;display:none}
-.bruto.ver{display:block}
-.rodape-corpo{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-
-/* ---- ajustes ---- */
-dialog{border:none;border-radius:14px;padding:0;width:min(520px,94vw);color:var(--tinta)}
-dialog::backdrop{background:rgba(10,30,38,.55)}
-.dlg{padding:20px 22px}
-.dlg h3{margin:0 0 12px}
-.dlg label{display:block;margin:10px 0 4px;font-weight:700;font-size:.92rem}
-.dlg select,.dlg input[type=range]{width:100%}
-.dlg select{padding:8px;border-radius:8px;border:1px solid var(--linha);font:inherit}
-.marcas{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px}
-.marcas label{font-weight:400;margin:0;display:flex;gap:6px;align-items:center}
-.dlg .acoes{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
-.btn{border:none;border-radius:8px;padding:9px 16px;background:var(--petroleo);color:#fff;font-weight:700}
-.btn.sec{background:#e3eaec;color:var(--tinta)}
-.btn.perigo{background:var(--rec)}
-</style>
-</head>
-<body>
-<div class="app">
-  <section class="conversa">
-    <div class="topo">
-      <span class="lampada" id="lamp"></span>
-      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v15</small>
-      <span class="estado" id="estado">parado</span>
-      <button id="btnParar" title="Parar de falar">Calar</button>
-      <button id="btnAjustes">Ajustes</button>
-    </div>
-    <div class="palco">
-      <button class="mic" id="mic" aria-label="Falar com o bot">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
-      </button>
-      <div class="controles" id="controles" hidden>
-        <button class="ctl" id="voltar" title="Guia anterior (seta ←)">⏮ Voltar</button>
-        <button class="pare" id="pare">■ Parar</button>
-        <button class="ctl" id="proximo" title="Próxima guia (seta →)">Próximo ⏭</button>
-      </div>
-      <div class="dica" id="dica">Toque no microfone (ou aperte F2) e pergunte. Ex.: "qual o telefone da Maria?"</div>
-      <label class="chave"><input type="checkbox" id="continuo"> Sempre ouvindo — é só chamar "bot"</label>
-      <div class="parcial" id="parcial"></div>
-    </div>
-    <div class="log" id="log"><div class="vazio-log" id="vazioLog">Suba as guias em PDF do lado direito e pergunte qualquer coisa: telefone, CPF, unidade, exames, quantos exames, remédios, peso…</div></div>
-    <form class="digitar" id="formTxt">
-      <input id="txt" placeholder="Ou digite a pergunta aqui…" autocomplete="off">
-      <button>Perguntar</button>
-    </form>
-  </section>
-
-  <section class="guias">
-    <header>
-      <h2>Guias</h2><span class="contagem" id="contagem">nenhuma</span>
-      <button class="lnk" id="selOrdem" title="Clique nas guias na ordem que quiser">Ordenar 1, 2, 3…</button>
-      <button class="lnk" id="az" title="Ordenar por nome">A→Z</button>
-      <button class="lnk" id="narrarTodas">Narrar todas</button>
-      <button class="lnk perigo" id="limpar">Apagar todas</button>
-    </header>
-    <div class="solta" id="solta">
-      <button id="btnSubir">Subir guias</button>
-      <div>PDF ou foto — pode arrastar vários de uma vez</div>
-      <input type="file" id="arq" accept=".pdf,image/*" multiple hidden>
-    </div>
-    <div class="fila" id="fila"></div>
-    <div class="barraSel" id="barraSel" hidden><span id="selInfo">Toque nas guias na ordem que você quer (1, 2, 3…)</span><button class="btn sec" id="selCancela">Cancelar</button><button class="btn" id="selOk">OK</button></div>
-    <div class="lista" id="lista"></div>
-  </section>
-</div>
-
-<dialog id="dlg"><div class="dlg">
-  <h3>Ajustes</h3>
-  <label for="voz">Voz</label>
-  <select id="voz"></select>
-  <label for="vel">Velocidade da fala <span id="velTxt"></span></label>
-  <input type="range" id="vel" min="0.7" max="1.6" step="0.05">
-  <label class="chave" style="background:#e3eaec;color:var(--tinta);margin-top:12px;font-weight:400"><input type="checkbox" id="momento"> Dizer "só um momento" antes de responder</label>
-  <label class="chave" style="background:#e3eaec;color:var(--tinta);margin-top:12px;font-weight:400"><input type="checkbox" id="ocrSempre"> Ler a guia pela imagem (OCR) — melhor pra guia escaneada</label>
-  <label for="modo">Jeito da narração</label>
-  <select id="modo"><option value="pdf">Na ordem do PDF (campo por campo)</option><option value="resumo">Resumo falado ("Essa é a guia de…")</option></select>
-  <label>O que entra na narração da guia</label>
-  <div class="marcas" id="marcas"></div>
-  <div class="acoes">
-    <span></span>
-    <span><button class="btn sec" id="testarVoz" type="button">Testar voz</button>
-    <button class="btn" id="fecharDlg" type="button">Pronto</button></span>
-  </div>
-</div></dialog>
-
-<script>
-/* ================== utilidades ================== */
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const normC=s=>[...String(s||'')].map(c=>{const n=c.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n.length===1?n:c.toLowerCase()}).join('');
-const norm=s=>normC(s).replace(/\s+/g,' ').trim();
-const LS={get(k,d){try{const v=localStorage.getItem('botguias.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('botguias.'+k,JSON.stringify(v))}catch(e){}}};
-
-/* ================== banco local (IndexedDB) ================== */
-const DB={db:null,
-  abrir(){return new Promise((ok,er)=>{const r=indexedDB.open('botguias',1);r.onupgradeneeded=()=>r.result.createObjectStore('guias',{keyPath:'id'});r.onsuccess=()=>{this.db=r.result;ok()};r.onerror=()=>er(r.error)})},
-  tx(m){return this.db.transaction('guias',m).objectStore('guias')},
-  todas(){return new Promise(ok=>{if(!this.db)return ok([]);const r=this.tx('readonly').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})},
-  salvar(g){if(this.db)this.tx('readwrite').put(g)},
-  apagar(id){if(this.db)this.tx('readwrite').delete(id)},
-  limpar(){if(this.db)this.tx('readwrite').clear()}
-};
-
-/* ================== campos que o bot entende ================== */
-// k: chave · rot: como fala · lab: rótulos no PDF · dois: rótulo só vale com ":" · re: palavras na pergunta
-const CAMPOS=[
- {k:'nome',rot:'nome',lab:['nome do servidor','nome do paciente','nome do beneficiario','nome do funcionario','nome do segurado','nome do trabalhador','nome completo','nome social','paciente','beneficiario','servidor','funcionario','trabalhador','nome'],re:/\b(nome completo|como (ela|ele) se chama)\b/},
- {k:'mae',rot:'nome da mãe',lab:['nome da mae','mae'],re:/\bmae\b/},
- {k:'pai',rot:'nome do pai',lab:['nome do pai'],re:/\bpai\b/},
- {k:'telefone',rot:'telefone',lab:['telefone celular','telefone de contato','telefone','celular','fone','tel','contato'],dois:['tel','fone','contato'],re:/\b(telefone|celular|fone|contato|ligar|zap|whats)/},
- {k:'ddd',rot:'DDD',lab:['ddd'],dois:['ddd'],re:/\bddd\b/},
- {k:'email',rot:'e-mail',lab:['e-mail','email'],re:/\b(e ?-?mail)\b/},
- {k:'cpf',rot:'CPF',lab:['cpf'],re:/\bcpf\b/},
- {k:'rg',rot:'RG',lab:['carteira de identidade','identidade','rg'],dois:['rg'],re:/\b(rg|identidade)\b/},
- {k:'matricula',rot:'matrícula',lab:['matricula siape','matricula','siape'],re:/\b(matricula|siape)\b/},
- {k:'nascimento',rot:'data de nascimento',lab:['data de nascimento','data nascimento','dt nascimento','dt nasc','data nasc','nascimento','nasc'],dois:['nasc'],re:/\b(nasc|aniversario)/},
- {k:'idade',rot:'idade',lab:['idade'],re:/\b(idade|quantos anos)\b/},
- {k:'sexo',rot:'sexo',lab:['sexo','genero'],re:/\b(sexo|genero)\b/},
- {k:'dataArquivo',rot:'data do arquivo',lab:['data do arquivo'],re:/\b(data do arquivo|dia do arquivo|arquivo)\b/},
- {k:'periodo',rot:'período dos exames',lab:['periodo de realizacao dos exames','periodo de realizacao'],re:/\b(periodo|prazo|validade|ate quando)\b/},
- {k:'uorgsup',rot:'Uorg superior',lab:['uorg superior'],re:/\b(uorg superior|superior)\b/},
- {k:'codigo',rot:'código de autenticidade',lab:['codigo de autenticidade'],re:/\b(autenticidade|codigo da guia|codigo de autenticidade)\b/},
- {k:'orgao',rot:'órgão',lab:['orgao','empresa','secretaria','instituicao','ministerio'],re:/\b(orgao|empresa|secretaria|ministerio|instituicao)\b/},
- {k:'unidade',rot:'lotação',lab:['uorg lotacao','unidade de lotacao','unidade de trabalho','unidade','lotacao','local de trabalho','setor','estabelecimento'],re:/\b(unidade|trabalha|lotad|lotacao|setor|onde (ela|ele) (fica|esta))/},
- {k:'cargo',rot:'cargo',lab:['cargo','funcao','ocupacao','profissao','cbo'],re:/\b(cargo|funcao|profissao|ocupacao|faz o que)\b/},
- {k:'endereco',rot:'endereço',lab:['endereco','logradouro'],re:/\b(endereco|mora|rua|logradouro)\b/},
- {k:'bairro',rot:'bairro',lab:['bairro'],re:/\bbairro\b/},
- {k:'cidade',rot:'cidade',lab:['cidade','municipio'],re:/\b(cidade|municipio)\b/},
- {k:'uf',rot:'estado',lab:['uf'],dois:['uf'],re:/\b(uf|estado)\b/},
- {k:'cep',rot:'CEP',lab:['cep'],re:/\bcep\b/},
- {k:'guia',rot:'número da guia',lab:['guia siass','numero da guia','n da guia','no da guia','guia no','guia n','guia'],dois:['guia'],re:/\b(numero da guia|guia numero|qual (e )?a guia|n(u|o) ?mero d[ao] guia)\b/},
- {k:'tipoexame',rot:'tipo de exame',lab:['tipo de exame','natureza do exame','tipo do exame','finalidade'],re:/\b(tipo de exame|admissional|periodico|demissional|finalidade)\b/},
- {k:'data',rot:'data',lab:['data da solicitacao','data de emissao','data do atendimento','data da guia','data'],dois:['data'],re:/\b(data|quando|dia)\b/},
- {k:'medico',rot:'médico',lab:['medico solicitante','profissional solicitante','solicitante','medico','crm'],dois:['crm'],re:/\b(medico|solicitante|crm|doutor)\b/},
- {k:'clinica',rot:'clínica',lab:['clinica','prestador','laboratorio','local do exame'],re:/\b(clinica|prestador|laboratorio|onde (vai|fez|faz))\b/},
- {k:'convenio',rot:'convênio',lab:['convenio','operadora','plano'],re:/\b(convenio|operadora|plano)\b/},
- {k:'peso',rot:'peso',lab:['peso'],re:/\b(peso|pesa|quilos|kg)\b/},
- {k:'altura',rot:'altura',lab:['altura','estatura'],re:/\b(altura|estatura|mede)\b/},
- {k:'pressao',rot:'pressão',lab:['pressao arterial','pressao','pa'],dois:['pa'],re:/\b(pressao)\b/},
- {k:'sinais',rot:'sinais vitais',lab:['sinais vitais'],re:/\bsinais\b/},
- {k:'medicamentos',rot:'remédios',lab:['medicamentos em uso','medicacoes em uso','uso de medicamentos','medicamentos','medicacoes','medicacao','remedios'],re:/\b(remedio|medicament|medicac|toma o que|que (ela|ele) toma)/},
- {k:'alergias',rot:'alergias',lab:['alergias','alergia'],re:/\b(alergi)/},
- {k:'diagnostico',rot:'diagnóstico',lab:['hipotese diagnostica','indicacao clinica','diagnostico','cid'],dois:['cid'],re:/\b(diagnostico|cid|doenca|indicacao)\b/},
- {k:'obs',rot:'observações',lab:['observacoes','observacao','obs'],dois:['obs'],re:/\b(observa|obs)\b/},
+</style></head>
+<body><header><a href="#" class="brand" aria-label="VozStage início"><span class="logo">♩</span>voz<span>stage</span><small>KARAOKÊ INTERATIVO</small></a><button id="help" class="ghost">Como cantar <span>?</span></button></header>
+<main><div class="heading"><div><p class="eyebrow">SUA VOZ MERECE UM PALCO</p><h1>Solte a <em>voz.</em></h1><p class="subtitle">Siga a melodia. Encontre sua nota. Sinta a música.</p></div><span class="headphone-badge">♫ Use fones para medir só sua voz</span></div>
+<div class="layout"><aside class="panel library"><div class="section-label">01 / ESCOLHA SUA MÚSICA <span>♫</span></div><div class="tabs" role="tablist" aria-label="Fonte musical"><button id="demo-tab" data-source="demo" role="tab" aria-controls="demo-panel" aria-selected="true">Treino</button><button id="youtube-tab" data-source="youtube" role="tab" aria-controls="youtube-panel" aria-selected="false" tabindex="-1">YouTube</button><button id="file-tab" data-source="file" role="tab" aria-controls="file-panel" aria-selected="false" tabindex="-1">Áudio</button></div>
+<section id="demo-panel" role="tabpanel" aria-labelledby="demo-tab"><div class="cover"><span>EXERCÍCIO VOCAL ORIGINAL</span><div>DEIXA<br>A VOZ<br><i>LEVAR.</i></div><b>♪</b><small>MELODIA + LETRA + AFINAÇÃO</small></div><h2>Deixa a voz levar</h2><p class="muted">Ouça a nota guia e cante junto.</p><div class="tags"><span>00:36</span><span>120 BPM</span><span>OFFLINE</span></div></section>
+<section id="youtube-panel" role="tabpanel" aria-labelledby="youtube-tab" hidden><h2>Cante suas favoritas.</h2><p class="muted">Prefira uma versão instrumental ou karaokê.</p><label for="youtubeLink">Link do YouTube</label><input id="youtubeLink" type="url" placeholder="https://youtu.be/…"><button id="loadYoutube" class="secondary full">Carregar vídeo ↗</button><div id="videoWrap" hidden><div id="youtubePlayer"></div></div><a id="openYoutube" class="text-link" target="_blank" rel="noopener noreferrer" hidden>Abrir no YouTube ↗</a><p class="fine">Reprodução online, sem download. Ao abrir o HTML diretamente, o YouTube pode exigir GitHub Pages ou um servidor local.</p></section>
+<section id="file-panel" role="tabpanel" aria-labelledby="file-tab" hidden><div class="file-art">♫</div><h2>Sua base instrumental.</h2><p class="muted">Carregue uma música do seu dispositivo.</p><label class="file-select">＋ Escolher áudio<input id="audioFile" type="file" accept="audio/*"></label><p id="fileName" class="fine">MP3, WAV, OGG ou outro áudio aceito pelo navegador.</p></section>
+<div id="externalGuide" hidden><div class="divider"></div><label class="file-select">＋ Guia de afinação (.json)<input id="guideFile" type="file" accept=".json,application/json"></label><p id="guideInfo" class="fine">Sem guia: exercício livre, com análise de estabilidade. Para comparar sua voz à melodia da música, importe as notas corretas.</p><div class="inline-actions"><button id="guideExample" class="text-button">Baixar modelo</button><button id="removeGuide" class="text-button" hidden>Remover guia</button></div></div>
+<div class="divider"></div><div class="section-label">02 / PREPARE SUA VOZ <span>◉</span></div><button id="micToggle" class="secondary full">◉ Ativar microfone</button><div class="mic-level"><span id="micStatus">Microfone desligado</span><div class="meter" role="meter" aria-label="Volume do microfone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="micMeter"><i id="micFill"></i></div></div>
+<details><summary>Ajustes de canto</summary><div class="settings-grid"><div><label for="transpose">Tom do guia</label><select id="transpose"><option value="-12">−12 semitons</option><option value="-5">−5 semitons</option><option value="-2">−2 semitons</option><option value="0" selected>Original</option><option value="2">+2 semitons</option><option value="5">+5 semitons</option><option value="12">+12 semitons</option></select></div><div><label for="latency">Ajuste do mic (ms)</label><input id="latency" type="number" min="-500" max="500" step="10" value="100"></div></div><label class="check"><input id="octave" type="checkbox" checked>Aceitar uma oitava acima ou abaixo</label><label for="noiseGate">Sensibilidade: <span id="gateValue">−48 dB</span></label><input id="noiseGate" type="range" min="-65" max="-25" value="-48"><p class="fine">Valores mais baixos captam vozes suaves e mais ruído. O tom altera o guia; não muda a tonalidade de vídeos ou arquivos.</p></details>
+<button id="start" class="primary full">♫ <span>Começar a cantar</span></button><p id="status" class="status" role="status" aria-live="polite">Ative o microfone, coloque os fones e venha cantar.</p><p class="privacy">Sua voz é analisada no dispositivo. Não é gravada nem enviada.</p></aside>
+<section class="stage" id="stage" aria-label="Palco de canto"><div class="stage-top"><span id="stageStatus">● PASSAGEM DE SOM</span><div class="controls"><button id="pause" class="icon" aria-label="Pausar" disabled>Ⅱ</button><button id="fullscreen" class="icon" aria-label="Tela cheia">⛶</button></div></div><div class="song-heading"><span id="modeBadge" class="mode-badge">COM MELODIA GUIA</span><h2 id="trackTitle">Deixa a voz levar</h2><p id="stageHint">A linha rosa é sua voz. As barras claras são a melodia.</p></div>
+<div class="pitch-board"><canvas id="pitchCanvas" aria-label="Gráfico de afinação. As barras mostram as notas alvo; a linha mostra a altura da voz."></canvas><div class="board-idle" id="boardIdle"><span class="voice-orb">♪</span><h3>O palco é seu.</h3><p>Cante e veja sua voz ganhar forma.</p></div><div id="feedback" role="status" aria-live="polite">PRONTO PARA O PRIMEIRO VERSO</div></div>
+<div class="lyrics"><p class="eyebrow" id="lyricLabel">ACOMPANHE A LETRA</p><div id="lyricLine">Respire. A sua voz vai começar.</div><p id="nextLyric">Um exercício original para encontrar sua afinação.</p></div>
+<div class="transport"><div class="times"><span id="elapsed">00:00</span><span id="duration">00:36</span></div><progress id="progress" value="0" max="36" aria-label="Progresso da música"></progress><div class="transport-bottom"><span><kbd>ESPAÇO</kbd> pausar</span><button id="finish" class="text-button" disabled>Encerrar e ver nota ↗</button></div></div>
+</section>
+<aside class="analysis-column"><section class="panel stats"><div class="section-label">SUA VOZ / AO VIVO <span class="pink-dot"></span></div><p class="small-label">NOTA DETECTADA</p><div class="pitch-readout"><strong id="pitchName">—</strong><span id="pitchHz">Cante uma nota</span></div><div class="tuning"><span>GRAVE</span><div><i id="tuningNeedle"></i><b></b></div><span>AGUDO</span></div><p class="tuning-caption" id="cents">Aguardando sua voz</p><div class="divider"></div><div class="metric"><span id="qualityLabel">Afinação</span><b id="quality">—</b></div><div class="bar"><i id="qualityFill"></i></div><div class="metric"><span>Tempo com voz</span><b id="voicedTime">0,0 s</b></div><div class="metric"><span>Extensão detectada</span><b id="vocalRange">—</b></div><div class="score-card"><span id="scoreLabel">NOTA PARCIAL</span><strong id="liveScore">—<small>/ 10</small></strong><p id="scoreCaption">A nota considera afinação e presença nas notas da melodia guia.</p></div></section>
+<section class="howto"><div class="section-label">SIGA SUA MELODIA <span>↙</span></div><div class="legend"><i></i><span>Melodia que você deve cantar</span></div><div class="legend voice"><i></i><span>Sua voz em tempo real</span></div><p>Procure manter a linha da sua voz sobre as barras quando elas cruzarem o marcador.</p><p id="evaluationNote">O treino compara sua afinação à melodia original. Silêncio nas notas também conta na avaliação.</p><div class="tip">♫ <span><b>Fones fazem a diferença.</b><br>Evite que o microfone capte a música saindo das caixas.</span></div></section></aside>
+</div><footer><span>VOZSTAGE / CANTE DO SEU JEITO</span><span>Análise técnica experimental, sem avaliação de emoção ou pronúncia.</span></footer></main>
+<dialog id="result"><button class="close icon" aria-label="Fechar resultado">×</button><p class="eyebrow" id="resultEyebrow">SEU SHOW, SUA VOZ</p><h2 id="resultTitle">Você fez o palco.</h2><p id="resultSong"></p><div class="final-score"><strong id="resultScore">0,0</strong><span>/ 10</span></div><p id="resultMethod"></p><div id="resultStats" class="result-stats"></div><p id="resultAdvice"></p><button id="again" class="primary full">♫ Cantar novamente</button></dialog>
+<dialog id="helpDialog"><button class="close icon" aria-label="Fechar instruções">×</button><p class="eyebrow">CANTE. ACOMPANHE. EVOLUA.</p><h2>Como funciona</h2><ol><li>Coloque fones e ative o microfone. Autorize a captura quando o navegador pedir.</li><li>No treino, cante a letra seguindo a nota guia. As barras se movem em direção ao marcador vertical.</li><li>A linha rosa mede a frequência da sua voz. Suba ou desça o tom para se aproximar das barras.</li><li>Ao terminar, veja a nota de 0 a 10. O treino mede afinação ao longo do tempo e penaliza notas não cantadas.</li></ol><h3>YouTube e seus áudios</h3><p>Sem uma melodia de referência, não é possível saber se você cantou as notas corretas da música. Nesses casos, o modo livre mostra sua voz e estima estabilidade e presença vocal, sem afirmar correção melódica.</p><p>Para avaliar afinação, carregue um guia JSON com as notas da mesma música. Cada nota usa segundos de início e fim, altura MIDI e texto opcional. O botão “Baixar modelo” mostra o formato. O HTML não extrai notas nem letras automaticamente do YouTube.</p><h3>Privacidade e compatibilidade</h3><p>A voz não é gravada nem enviada a servidores. A análise é local. Se o microfone não estiver disponível no arquivo, use HTTPS (GitHub Pages) ou localhost. A reprodução do YouTube depende de internet e da permissão de incorporação do vídeo.</p></dialog>
+<audio id="localAudio" preload="metadata"></audio><script>
+'use strict';
+const $=id=>document.getElementById(id), clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+const fmt=t=>`${Math.floor(Math.max(0,t)/60).toString().padStart(2,'0')}:${Math.floor(Math.max(0,t)%60).toString().padStart(2,'0')}`;
+const decimal=n=>n.toFixed(1).replace('.',','), midiHz=n=>440*Math.pow(2,(n-69)/12), hzMidi=f=>69+12*Math.log2(f/440);
+function noteName(midi){if(!Number.isFinite(midi))return '—';const n=Math.round(midi);return ['Dó','Dó♯','Ré','Ré♯','Mi','Fá','Fá♯','Sol','Sol♯','Lá','Lá♯','Si'][((n%12)+12)%12]+(Math.floor(n/12)-1);}
+function centsBetween(midi,target,octave){let d=midi-target;if(octave)d-=12*Math.round(d/12);return d*100;}
+function pitchQuality(cents){return clamp(1-Math.max(0,Math.abs(cents)-20)/130,0,1);}
+const phrases=[
+ {text:'Deixa a voz te levar',words:['Dei-','xa','a','voz','te','levar'],pitches:[60,62,64,67,65,64]},
+ {text:'Eu vou cantar pra voar',words:['Eu','vou','can-','tar','pra','voar'],pitches:[62,64,65,69,67,65]},
+ {text:'Sinto a luz despertar',words:['Sin-','to','a','luz','des-','pertar'],pitches:[64,65,67,69,67,64]},
+ {text:'Minha voz vai brilhar',words:['Mi-','nha','voz','vai','bri-','lhar'],pitches:[62,64,65,64,62,60]},
+ {text:'Deixa o medo passar',words:['Dei-','xa','o','me-','do','passar'],pitches:[60,62,64,67,69,67]},
+ {text:'Sinto o ar me abraçar',words:['Sin-','to','o','ar','me','abraçar'],pitches:[65,64,62,65,67,65]},
+ {text:'Cada nota tem seu lugar',words:['Ca-','da','nota','tem','seu','lugar'],pitches:[64,65,67,69,67,64]},
+ {text:'Minha voz pode voar',words:['Mi-','nha','voz','po-','de','voar'],pitches:[62,64,65,64,62,60]}
 ];
-const CAMPO=Object.fromEntries(CAMPOS.map(c=>[c.k,c]));
-const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-const LABS=[];
-CAMPOS.forEach(c=>c.lab.forEach(l=>{
-  const corpo=l.split(' ').map(w=>reEsc(w)+'\\.?').join('[\\s.]*');
-  LABS.push({k:c.k,l,dois:(c.dois||[]).includes(l),re:new RegExp('(^|[^a-z0-9])('+corpo+')(?![a-z])(\\s*(n[o°º.]*|numero|nr\\.?)(?![a-z]))?\\s*([:\\-–]?)','g')});
-}));
+function demoGuide(){const notes=[];phrases.forEach((p,i)=>{let t=3+i*4;[.5,.5,1,.5,.5,1].forEach((d,j)=>{notes.push({start:t,end:t+d-.065,midi:p.pitches[j],text:p.words[j],phrase:i});t+=d;});});return notes;}
+const state={source:'demo',phase:'idle',title:'Deixa a voz levar',duration:36,time:0,guide:demoGuide(),transpose:0,octave:true,latency:.1,gate:-48,mic:false,midi:null,hz:0,rms:0,confidence:0,history:[],stats:null,partial:false,fileReady:false,ytReady:false,videoId:'',fileTitle:''};
+let micContext,stream,micInput,analyser,micPending,requestMicToken=0,buffer,analysisTimer;
+let synth,synthOrigin=0,synthPaused=0,synthTimer,synthNotes=[],demoNext=0,beatNext=0;
+let yt,ytApi,ytLoadToken=0,ytTimer,fileUrl,runToken=0,playLast=0,pitchWindow=[],lastPitchTime=-1,lyricKey='',lastUI=0;
+const audio=$('localAudio'),canvas=$('pitchCanvas'),ctx=canvas.getContext('2d');let width=600,height=300;
+const busy=()=>['requesting','starting','playing','paused','buffering'].includes(state.phase);
+function status(s){$('status').textContent=s;}
+function feedback(s){if($('feedback').textContent!==s)$('feedback').textContent=s;}
+function freshStats(){return {voiced:0,qualityIntegral:0,stableIntegral:0,stableDuration:0,targetVoiced:0,pitches:[],elapsed:0};}
+function resetStats(){state.stats=freshStats();state.time=0;state.midi=null;state.hz=0;state.history=[];playLast=0;pitchWindow=[];lastPitchTime=-1;lyricKey='';state.partial=false;updateStats();}
+function expectedDuration(notes,until){return notes.reduce((sum,n)=>sum+Math.max(0,Math.min(until,n.end)-n.start),0);}
+function targetAt(time){return state.guide.find(n=>time>=n.start&&time<n.end)||null;}
+function scoreSummary(stats,notes,until){
+  const guided=notes.length>0,expected=expectedDuration(notes,until),quality=guided?(stats.targetVoiced?stats.qualityIntegral/stats.targetVoiced:0):(stats.stableDuration?stats.stableIntegral/stats.stableDuration:0);
+  const coverage=guided?(expected?stats.targetVoiced/expected:0):(until?stats.voiced/until:0);
+  const sufficient=guided?expected>=2:until>=5;
+  let score=guided?(expected?10*stats.qualityIntegral/expected:0):stats.voiced>=1&&stats.stableDuration>=.5?10*(.7*quality+.3*clamp(coverage/.6,0,1)):0;
+  return {guided,expected,quality:clamp(quality,0,1),coverage:clamp(coverage,0,1),score:clamp(score,0,10),sufficient};
+}
+function updateStats(){const s=scoreSummary(state.stats,state.guide,state.stats.elapsed);$('quality').textContent=state.stats.voiced?Math.round(s.quality*100)+'%':'—';$('qualityFill').style.width=(s.quality*100)+'%';$('voicedTime').textContent=decimal(state.stats.voiced)+' s';
+  const list=state.stats.pitches;if(list.length>=10){const sorted=[...list].sort((a,b)=>a-b);$('vocalRange').textContent=noteName(sorted[Math.floor(sorted.length*.05)])+' – '+noteName(sorted[Math.floor(sorted.length*.95)]);}else $('vocalRange').textContent='—';
+  $('liveScore').innerHTML=(s.sufficient?decimal(s.score):'—')+'<small>/ 10</small>';
+}
+function updateMode(){const guided=state.guide.length>0;$('modeBadge').textContent=guided?'COM MELODIA GUIA':'EXERCÍCIO LIVRE';$('qualityLabel').textContent=guided?'Afinação':'Estabilidade';$('scoreLabel').textContent=guided?'NOTA PARCIAL':'ESTIMATIVA TÉCNICA';
+  $('stageHint').textContent=guided?'A linha rosa é sua voz. As barras claras são a melodia.':'Visualize sua voz. Sem guia, não há notas alvo da música.';
+  $('scoreCaption').textContent=guided?'Afinação ao longo da melodia. Notas não cantadas também contam.':'Estabilidade (70%) e presença vocal (30%). Não avalia a melodia da música.';
+  $('evaluationNote').textContent=guided?'A nota compara sua afinação com o guia carregado. Use uma referência correspondente à mesma versão da música.':'Sem guia, uma nota sustentada pode pontuar bem. A estimativa não avalia correção da melodia, letra ou interpretação artística.';
+  $('externalGuide').hidden=state.source==='demo';$('removeGuide').hidden=!guided||state.source==='demo';$('transpose').disabled=busy()||!guided;
+}
+function syncUI(){const active=busy();$('trackTitle').textContent=state.title;$('duration').textContent=state.duration?fmt(state.duration):'—';$('progress').max=state.duration||1;
+  $('stageStatus').textContent=({idle:'● PASSAGEM DE SOM',loading:'● CARREGANDO MÚSICA',requesting:'● AUTORIZE O MICROFONE',starting:'● AGUARDANDO REPRODUÇÃO',playing:'● SUA VOZ AO VIVO',paused:'● CANTO PAUSADO',buffering:'● AGUARDANDO MÚSICA',ended:'● APRESENTAÇÃO CONCLUÍDA',error:'● VERIFIQUE A MÚSICA'})[state.phase];
+  $('pause').disabled=!['playing','paused','buffering','starting'].includes(state.phase);$('pause').textContent=state.phase==='paused'?'▶':'Ⅱ';$('pause').setAttribute('aria-label',state.phase==='paused'?'Continuar':'Pausar');$('finish').disabled=!['playing','paused','buffering'].includes(state.phase);
+  $('start').disabled=active||state.phase==='loading';$('start').querySelector('span').textContent=active?'Cante no seu tempo':'Começar a cantar';
+  for(const id of ['latency','octave','guideFile','audioFile','loadYoutube','youtubeLink','removeGuide'])$(id).disabled=active;
+  $('boardIdle').hidden=state.mic||active||state.phase==='ended';$('micToggle').textContent=state.mic?'◉ Desligar microfone':'◉ Ativar microfone';$('micStatus').textContent=state.mic?'Microfone ativo · análise local':'Microfone desligado';updateMode();
+}
+// YIN difference function with cumulative normalization, downsampled to at most 24 kHz.
+// Returns no pitch for silence or aperiodic input; no random grades are used.
+function detectPitch(input,sampleRate,gate=.004){
+  let energy=0,mean=0;for(let i=0;i<input.length;i++){mean+=input[i];energy+=input[i]*input[i];}mean/=input.length;
+  const rms=Math.sqrt(Math.max(0,energy/input.length-mean*mean));if(rms<gate)return {hz:0,rms,confidence:0};
+  const stride=Math.max(1,Math.floor(sampleRate/22050)),rate=sampleRate/stride,n=Math.floor(input.length/stride),data=new Float32Array(n);
+  for(let i=0;i<n;i++){let value=0;for(let j=0;j<stride;j++)value+=input[i*stride+j]-mean;data[i]=value/stride;}
+  const maxTau=Math.min(Math.floor(rate/65),Math.floor(n/2)-1),minTau=Math.max(2,Math.floor(rate/1050)),windowSize=n-maxTau,cmnd=new Float32Array(maxTau+1);let sum=0,best=1,bestTau=-1;
+  for(let tau=1;tau<=maxTau;tau++){let diff=0;for(let i=0;i<windowSize;i++){const delta=data[i]-data[i+tau];diff+=delta*delta;}sum+=diff;cmnd[tau]=sum?diff*tau/sum:1;if(tau>=minTau&&cmnd[tau]<best){best=cmnd[tau];bestTau=tau;}}
+  let tau=-1;for(let t=minTau;t<maxTau;t++){if(cmnd[t]<.15){while(t+1<=maxTau&&cmnd[t+1]<cmnd[t])t++;tau=t;break;}}
+  if(tau<0){if(best>.22)return {hz:0,rms,confidence:0};tau=bestTau;}
+  const a=cmnd[tau-1]??cmnd[tau],b=cmnd[tau],c=cmnd[tau+1]??b,den=a-2*b+c;
+  const precise=tau+(den?clamp((a-c)/(2*den),-1,1):0),hz=rate/precise;
+  return hz>=65&&hz<=1050?{hz,rms,confidence:1-b}:{hz:0,rms,confidence:0};
+}
+async function enableMic(){
+  if(state.mic){await micContext.resume();return true;}if(micPending)return micPending;
+  if(!navigator.mediaDevices?.getUserMedia){status('Microfone indisponível. Abra no Chrome/Edge usando HTTPS, GitHub Pages ou localhost.');return false;}
+  const token=++requestMicToken;$('micToggle').disabled=true;status('Autorize o microfone na janela do navegador. Use fones de ouvido.');
+  micPending=(async()=>{let acquired;try{
+    const AudioCtor=window.AudioContext||window.webkitAudioContext;micContext=new AudioCtor();await micContext.resume();acquired=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false},video:false});
+    if(token!==requestMicToken){acquired.getTracks().forEach(t=>t.stop());return false;}stream=acquired;analyser=micContext.createAnalyser();analyser.fftSize=4096;analyser.smoothingTimeConstant=0;
+    micInput=micContext.createMediaStreamSource(stream);micInput.connect(analyser);buffer=new Float32Array(analyser.fftSize);await micContext.resume();if(token!==requestMicToken){acquired.getTracks().forEach(t=>t.stop());return false;}state.mic=true;
+    stream.getAudioTracks().forEach(track=>track.onended=()=>{if(state.mic){pauseSong();disableMic();status('O microfone foi desconectado. Reconecte e ative novamente.');}});
+    clearInterval(analysisTimer);analysisTimer=setInterval(sampleMic,50);syncUI();status('Microfone pronto. Cante uma nota para testar; depois comece a música.');return true;
+  }catch(error){if(acquired)acquired.getTracks().forEach(t=>t.stop());if(micContext&&micContext.state!=='closed')micContext.close().catch(()=>{});if(token!==requestMicToken)return false;const messages={NotAllowedError:'Permissão de microfone negada. Libere o microfone nas permissões do navegador e tente novamente.',NotFoundError:'Nenhum microfone encontrado. Conecte um microfone e tente novamente.',NotReadableError:'Não foi possível acessar o microfone. Feche outros programas que possam estar usando-o.'};status(messages[error.name]||'Não foi possível ativar o microfone neste navegador. Tente HTTPS ou localhost.');return false;
+  }finally{micPending=null;$('micToggle').disabled=false;}})();return micPending;
+}
+function disableMic(){requestMicToken++;clearInterval(analysisTimer);state.mic=false;if(stream)stream.getTracks().forEach(t=>{t.onended=null;t.stop();});stream=null;try{micInput?.disconnect();}catch{}if(micContext&&micContext.state!=='closed')micContext.close().catch(()=>{});state.midi=null;state.hz=0;state.rms=0;$('micFill').style.width='0%';$('micMeter').setAttribute('aria-valuenow','0');$('pitchName').textContent='—';$('pitchHz').textContent='Microfone desligado';syncUI();}
+function sampleMic(){
+  if(!state.mic||!analyser||micContext.state!=='running')return;analyser.getFloatTimeDomainData(buffer);const p=detectPitch(buffer,micContext.sampleRate,Math.pow(10,state.gate/20));state.rms=p.rms;state.hz=p.hz;state.confidence=p.confidence;state.midi=p.hz?hzMidi(p.hz):null;
+  const now=performance.now()/1000,level=clamp((20*Math.log10(Math.max(p.rms,.00001))+65)/60*100,0,100);$('micFill').style.width=level+'%';$('micMeter').setAttribute('aria-valuenow',String(Math.round(level)));
+  $('pitchName').textContent=p.hz?noteName(state.midi):'—';$('pitchHz').textContent=p.hz?Math.round(p.hz)+' Hz · voz detectada':p.rms>.35?'Volume alto / sinal sem nota':'Cante uma vogal sustentada';
+  if(state.phase==='playing'){
+    const raw=getTime(),time=Math.max(0,raw-state.latency);if(time<playLast-.12||time-playLast>1){invalidateSeek(raw);return;}const dt=Math.max(0,time-playLast);playLast=time;state.time=raw;state.stats.elapsed=time;
+    // Missing/stalled frames never create artificial singing credit.
+    const scoredDt=Math.min(dt,.12),start=time-scoredDt;let stability=0;
+    if(p.hz){if(now-lastPitchTime>.2||pitchWindow.length&&Math.abs(state.midi-pitchWindow[pitchWindow.length-1].midi)>1.5)pitchWindow=[];pitchWindow.push({time:now,midi:state.midi});pitchWindow=pitchWindow.filter(x=>now-x.time<=.35);lastPitchTime=now;
+      state.stats.voiced+=scoredDt;state.stats.pitches.push(state.midi);if(state.stats.pitches.length>12000)state.stats.pitches.splice(0,6000);
+      if(pitchWindow.length>=3){const values=pitchWindow.map(x=>x.midi).sort((a,b)=>a-b),median=values[Math.floor(values.length/2)],deviation=values.reduce((s,v)=>s+Math.abs(v-median)*100,0)/values.length;stability=clamp(1-Math.max(0,deviation-12)/100,0,1);state.stats.stableIntegral+=stability*scoredDt;state.stats.stableDuration+=scoredDt;}
+      for(const n of state.guide){const overlap=Math.max(0,Math.min(time,n.end)-Math.max(start,n.start));if(overlap){state.stats.targetVoiced+=overlap;state.stats.qualityIntegral+=overlap*pitchQuality(centsBetween(state.midi,n.midi+state.transpose,state.octave));}}
+    }else{pitchWindow=[];}
+    state.history.push({time,midi:state.midi});state.history=state.history.filter(x=>x.time>time-12);showPitchFeedback(time,stability);updateStats();
+  }else if(!busy()){state.history.push({time:now,midi:state.midi});state.history=state.history.filter(x=>x.time>now-12);showPitchFeedback(null,0);}
+}
+function showPitchFeedback(time,stability){const target=time===null?null:targetAt(time);let cents=null;
+  if(state.midi!==null){cents=target?centsBetween(state.midi,target.midi+state.transpose,state.octave):(state.midi-Math.round(state.midi))*100;$('tuningNeedle').style.left=clamp(50+cents/3,0,100)+'%';$('cents').textContent=target?(Math.abs(cents)<20?'No centro da nota':`${cents>0?'+':''}${Math.round(cents)} cents do guia`):`${cents>0?'+':''}${Math.round(cents)} cents de ${noteName(state.midi)}`;
+    if(time===null)feedback('MICROFONE PRONTO · SUA VOZ ESTÁ CHEGANDO');else if(target)feedback(Math.abs(cents)<=30?'AFINAÇÃO NO PONTO':Math.abs(cents)<=80?'QUASE LÁ':cents>0?'DESÇA UM POUCO O TOM':'SUBA UM POUCO O TOM');else feedback(state.guide.length?'RESPIRE · PRÓXIMA FRASE CHEGANDO':stability>.8?'VOZ ESTÁVEL · EXERCÍCIO LIVRE':'CANTE NO SEU TOM · EXERCÍCIO LIVRE');
+  }else{$('cents').textContent='Aguardando uma nota vocal';$('tuningNeedle').style.left='50%';if(state.phase==='playing')feedback(target?'CANTE A NOTA QUE PASSA NO MARCADOR':'RESPIRE E ENTRE NO RITMO');}
+}
+function getTime(){if(state.source==='demo')return synth?Math.min(state.duration,Math.max(0,synth.currentTime-synthOrigin)):state.time;if(state.source==='file')return audio.currentTime;return state.ytReady?yt.getCurrentTime():state.time;}
+function stopMusic(){clearInterval(synthTimer);if(synth&&synth.state!=='closed')synth.suspend().catch(()=>{});audio.pause();if(state.ytReady)try{yt.pauseVideo();}catch{}}
+function cancelSession(){runToken++;state.phase='idle';stopMusic();resetStats();}
+function tone(midi,time,duration,volume=.1,type='sine'){const o=synth.createOscillator(),g=synth.createGain();o.type=type;o.frequency.value=midiHz(midi);g.gain.setValueAtTime(.0001,time);g.gain.exponentialRampToValueAtTime(volume,time+.025);g.gain.setValueAtTime(volume*.7,Math.max(time+.025,time+duration-.07));g.gain.exponentialRampToValueAtTime(.0001,time+duration);o.connect(g);g.connect(synth.destination);o.start(time);o.stop(time+duration+.02);synthNotes.push(o);o.onended=()=>{synthNotes=synthNotes.filter(x=>x!==o);};}
+function scheduleDemo(){if(state.phase!=='playing'||!synth)return;const t=getTime();while(demoNext<state.guide.length&&state.guide[demoNext].start<t+.15){const n=state.guide[demoNext++];if(n.start>=t-.04)tone(n.midi+state.transpose,Math.max(synth.currentTime,synthOrigin+n.start),n.end-n.start,.09,'triangle');}while(beatNext*.5<t+.15){const bt=beatNext*.5;if(bt>=36)return;if(bt>=t-.04){const at=Math.max(synth.currentTime,synthOrigin+bt);if(bt<3)tone(72,at,.07,.045);else{if(beatNext%8===6){const root=[48,53,55,48][Math.floor((bt-3)/4)%4]+state.transpose;tone(root,at,1.8,.028);tone(root+7,at,1.8,.013);}tone(84,at,.035,.008);}}beatNext++;}}
+async function startSong(){
+  if(busy())return;if(state.source==='youtube'&&!state.ytReady){status('Carregue um vídeo antes de começar.');return;}if(state.source==='file'&&!state.fileReady){status('Escolha um áudio antes de começar.');return;}
+  const latency=Number($('latency').value);if(!Number.isFinite(latency)||Math.abs(latency)>500){status('O ajuste do microfone deve ficar entre −500 e 500 ms.');return;}
+  if(state.source==='youtube')state.duration=yt.getDuration();if(!(state.duration>=5&&state.duration<=7200)){status('Use uma música com duração entre 5 segundos e 2 horas. No YouTube, aguarde os dados do vídeo; lives não são suportadas.');return;}
+  if(state.guide.some(n=>n.end>state.duration+.1)){status('O guia contém notas depois do fim da música. Carregue um guia correspondente a este áudio.');return;}
+  const token=++runToken;state.phase='requesting';syncUI();const ready=await enableMic();if(token!==runToken)return;if(!ready){state.phase='idle';syncUI();return;}
+  state.transpose=Number($('transpose').value);state.octave=$('octave').checked;state.latency=latency/1000;resetStats();state.phase='starting';syncUI();
+  try{if(state.source==='demo'){if(synth&&synth.state!=='closed')await synth.close();if(token!==runToken)return;synth=new (window.AudioContext||window.webkitAudioContext)();await synth.resume();if(token!==runToken)return;synthOrigin=synth.currentTime;demoNext=0;beatNext=0;state.phase='playing';scheduleDemo();synthTimer=setInterval(scheduleDemo,25);}
+    else if(state.source==='file'){audio.currentTime=0;await audio.play();if(token!==runToken){audio.pause();return;}state.phase='playing';}
+    else{yt.seekTo(0,true);yt.playVideo();}
+    status(state.source==='youtube'?'Aguardando o vídeo. Se necessário, clique em play dentro do player.':'Cante seguindo a melodia. A análise da sua voz está ativa.');syncUI();$('stage').scrollIntoView({behavior:'smooth',block:'start'});
+  }catch{state.phase='error';stopMusic();disableMic();status('A reprodução não iniciou. Tente novamente ou escolha outro áudio.');syncUI();}
+}
+async function pauseSong(){
+  if(['playing','starting','buffering'].includes(state.phase)){state.time=getTime();state.phase='paused';stopMusic();feedback('PAUSADO · RESPIRE E VOLTE');status('Pausado. O microfone continua ativo; use o botão para desligá-lo.');syncUI();return;}
+  if(state.phase==='paused'){const token=runToken;if(!await enableMic()||token!==runToken)return;state.phase='starting';syncUI();try{if(state.source==='demo'){await synth.resume();if(token!==runToken)return;state.phase='playing';scheduleDemo();synthTimer=setInterval(scheduleDemo,25);}else if(state.source==='file'){await audio.play();if(token!==runToken)return;state.phase='playing';}else yt.playVideo();syncUI();}catch{state.phase='paused';status('Clique em continuar para permitir a reprodução.');syncUI();}}
+}
+function invalidateSeek(t){state.phase='paused';stopMusic();resetStats();state.time=t;status('A posição da música mudou. A avaliação foi zerada para não contar notas repetidas. Encerre e comece novamente do início.');state.phase='idle';syncUI();feedback('RECOMECE A MÚSICA PARA AVALIAR');}
+function finishSong(partial=false){
+  if(!['playing','paused','buffering'].includes(state.phase))return;state.time=partial?getTime():state.duration;state.stats.elapsed=Math.max(0,state.time-state.latency);state.partial=partial&&state.time<state.duration-.5;state.phase='ended';runToken++;stopMusic();disableMic();
+  const s=scoreSummary(state.stats,state.guide,state.stats.elapsed);updateStats();syncUI();$('resultEyebrow').textContent=state.partial?'AVALIAÇÃO DO TRECHO CANTADO':'SEU SHOW, SUA VOZ';$('resultTitle').textContent=!s.sufficient?'Cante um pouco mais.':state.stats.voiced<1?'Não detectamos canto suficiente.':s.score>=8?'Sua voz brilhou.':s.score>=5?'Seu próximo verso vai além.':'Cada treino é um começo.';
+  $('resultSong').textContent=state.title+(state.partial?' · encerrado em '+fmt(state.time):'');$('resultScore').textContent=s.sufficient?decimal(s.score):'—';
+  $('resultMethod').textContent=s.guided?'Afinação comparada ao guia, ponderada pelo tempo. Notas não cantadas reduzem a nota.':'Estimativa de exercício livre: 70% estabilidade e 30% presença vocal. Não mede se você acertou a melodia da música.';
+  $('resultStats').replaceChildren();for(const [label,value] of [[s.guided?'Afinação ao cantar':'Estabilidade',Math.round(s.quality*100)+'%'],['Tempo com voz',decimal(state.stats.voiced)+' s'],[s.guided?'Guia cantado':'Presença vocal',Math.round(s.coverage*100)+'%']]){const el=document.createElement('span'),b=document.createElement('b');b.textContent=value;el.append(b,document.createTextNode(label));$('resultStats').append(el);}
+  $('resultAdvice').textContent=!s.sufficient?'Cante pelo menos 2 segundos de notas do guia, ou 5 segundos no modo livre, para obter uma nota.':state.stats.voiced<1?'Confira o volume do microfone, aproxime-se e cante uma vogal sustentada. Silêncio não gera pontos.':s.guided?(s.coverage<.6?'Tente acompanhar mais notas da melodia e respirar entre as frases.':'Ouça o guia com fones e ajuste o tom à sua extensão vocal.'): 'Para avaliar afinação musical, importe um guia da mesma música. Esta estimativa técnica não avalia emoção, letra ou qualidade artística.';
+  feedback('APRESENTAÇÃO FINALIZADA');if(!$('result').open)$('result').showModal();status('Avaliação concluída. O microfone foi desligado.');
+}
+function extractVideoId(value){try{const u=new URL(value.trim());if(!['https:','http:'].includes(u.protocol))return '';let id='';if(u.hostname==='youtu.be')id=u.pathname.split('/')[1];else if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(u.hostname))id=/^\/(shorts|embed|live)\//.test(u.pathname)?u.pathname.split('/')[2]:u.searchParams.get('v');return /^[\w-]{11}$/.test(id||'')?id:'';}catch{return '';}}
+function loadApi(){if(window.YT?.Player)return Promise.resolve();if(ytApi)return ytApi;ytApi=new Promise((resolve,reject)=>{const timer=setTimeout(()=>{ytApi=null;reject(new Error('timeout'));},15000);window.onYouTubeIframeAPIReady=()=>{clearTimeout(timer);resolve();};const script=document.createElement('script');script.src='https://www.youtube.com/iframe_api';script.onerror=()=>{clearTimeout(timer);ytApi=null;script.remove();reject(new Error('network'));};document.head.append(script);});return ytApi;}
+function clearGuide(){state.guide=state.source==='demo'?demoGuide():[];$('guideFile').value='';$('guideInfo').textContent='Sem guia: exercício livre, com análise de estabilidade. Para comparar sua voz à melodia da música, importe as notas corretas.';lyricKey='';updateMode();}
+async function loadYoutube(){
+  if(busy())return;const id=extractVideoId($('youtubeLink').value);if(!id){status('Cole um link válido do YouTube.');return;}cancelSession();clearGuide();const token=++ytLoadToken;state.phase='loading';state.ytReady=false;state.videoId=id;state.duration=0;state.title='Música do YouTube';syncUI();status('Carregando o player…');$('openYoutube').href='https://www.youtube.com/watch?v='+id;$('openYoutube').hidden=false;
+  try{await loadApi();if(token!==ytLoadToken||state.source!=='youtube')return;if(yt)yt.destroy();$('videoWrap').innerHTML='<div id="youtubePlayer"></div>';$('videoWrap').hidden=false;
+    yt=new YT.Player('youtubePlayer',{host:'https://www.youtube-nocookie.com',width:'100%',height:215,videoId:id,playerVars:{playsinline:1,rel:0,...(/^https?:$/.test(location.protocol)?{origin:location.origin}:{})},events:{
+      onReady:e=>{if(token!==ytLoadToken)return;clearTimeout(ytTimer);state.ytReady=true;e.target.getIframe().setAttribute('referrerpolicy','strict-origin-when-cross-origin');state.title=e.target.getVideoData()?.title||'Música do YouTube';state.duration=e.target.getDuration()||0;state.phase='idle';syncUI();status('Vídeo carregado. Sem guia de notas, a avaliação será de exercício livre.');},
+      onStateChange:e=>{if(e.target!==yt||state.source!=='youtube')return;const data=yt.getVideoData();if(data?.title){state.title=data.title;$('trackTitle').textContent=state.title;}const d=yt.getDuration();if(d>0){state.duration=d;$('duration').textContent=fmt(d);$('progress').max=d;}
+        if(e.data===1){if(['starting','paused','buffering'].includes(state.phase)&&state.mic){state.phase='playing';syncUI();status('Cante com fones. Sua voz está sendo analisada no dispositivo.');}else if(state.phase!=='playing')yt.pauseVideo();}
+        else if(e.data===2&&state.phase==='playing'){state.phase='paused';syncUI();}
+        else if(e.data===3&&state.phase==='playing'){state.phase='buffering';syncUI();}
+        else if(e.data===0&&['playing','buffering','paused'].includes(state.phase))finishSong();
+      },
+      onError:e=>{if(e.target!==yt)return;clearTimeout(ytTimer);state.phase='error';state.ytReady=false;stopMusic();if(state.mic)disableMic();syncUI();status(`O YouTube não conseguiu reproduzir (erro ${e.data}). ${location.protocol==='file:'?'Tente GitHub Pages ou localhost. ':''}Escolha outro vídeo ou um áudio local.`);}
+    }});clearTimeout(ytTimer);ytTimer=setTimeout(()=>{if(state.phase==='loading'){state.phase='error';syncUI();status('O player não respondeu. Verifique a conexão e tente novamente.');}},15000);
+  }catch{if(token!==ytLoadToken)return;state.phase='error';syncUI();status('Sem conexão com o YouTube. O treino e os áudios locais funcionam sem internet.');}
+}
+function changeSource(source){cancelSession();clearTimeout(ytTimer);ytLoadToken++;state.source=source;clearGuide();state.title=source==='demo'?'Deixa a voz levar':source==='file'&&state.fileReady?state.fileTitle:source==='youtube'&&state.ytReady?yt.getVideoData()?.title||'Música do YouTube':source==='file'?'Seu áudio':'Sua música no YouTube';state.duration=source==='demo'?36:source==='file'&&state.fileReady?audio.duration:source==='youtube'&&state.ytReady?yt.getDuration():0;
+  for(const b of document.querySelectorAll('[data-source]')){const selected=b.dataset.source===source;b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;$(b.dataset.source+'-panel').hidden=!selected;}syncUI();status(source==='demo'?'Treino original com melodia guia e letra sincronizada.':'Escolha uma música. Importe um guia para avaliar a afinação da melodia.');}
+function validateGuide(data){if(!data||!Array.isArray(data.notes)||data.notes.length<1||data.notes.length>10000)throw new Error('O guia precisa de 1 a 10.000 notas.');let lastEnd=-1;return data.notes.map((n,i)=>{if(!n||![n.start,n.end,n.midi].every(v=>typeof v==='number'&&Number.isFinite(v))||n.start<0||n.end<=n.start||n.end>7200||n.end-n.start<.05||n.midi<36||n.midi>96||!Number.isInteger(n.midi)||n.start<lastEnd)throw new Error(`Nota ${i+1} inválida: use tempos crescentes sem sobreposição e MIDI inteiro de 36 a 96.`);if(n.text!==undefined&&typeof n.text!=='string')throw new Error('O texto de cada nota deve ser uma string.');lastEnd=n.end;return {start:n.start,end:n.end,midi:n.midi,text:(n.text||'').slice(0,100),phrase:Math.floor(i/6)};});}
+$('guideFile').onchange=async()=>{const f=$('guideFile').files[0];if(!f||busy())return;const source=state.source,token=runToken;try{if(f.size>2e6)throw new Error('O guia deve ter até 2 MB.');const data=JSON.parse(await f.text()),notes=validateGuide(data);if(token!==runToken||source!==state.source)return;if(state.duration&&notes.some(n=>n.end>state.duration+.1))throw new Error('As notas do guia ultrapassam a duração da música.');state.guide=notes;resetStats();syncUI();$('guideInfo').textContent=`Guia carregado: ${String(data.title||f.name).slice(0,120)} · ${notes.length} notas. Confirme que corresponde à mesma versão da música.`;status('Guia vocal pronto. Agora a nota final compara sua voz à melodia importada.');}catch(e){status('Guia não carregado: '+e.message);$('guideFile').value='';}};
+$('removeGuide').onclick=()=>{if(busy())return;clearGuide();resetStats();syncUI();status('Guia removido. Exercício livre selecionado.');};
+$('guideExample').onclick=()=>{const data={title:'MODELO — substitua pelas notas da sua música',notes:[{start:3,end:3.9,midi:60,text:'Sua'},{start:4,end:4.9,midi:62,text:'voz'},{start:5,end:6.8,midi:64,text:'aqui'}]};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='modelo-guia-vocal.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+$('audioFile').onchange=()=>{const f=$('audioFile').files[0];if(!f||busy())return;cancelSession();clearGuide();state.fileReady=false;state.phase='loading';state.duration=0;state.fileTitle=f.name.replace(/\.[^.]+$/,'');state.title=state.fileTitle;$('fileName').textContent=f.name;if(fileUrl)URL.revokeObjectURL(fileUrl);fileUrl=URL.createObjectURL(f);audio.src=fileUrl;syncUI();status('Lendo o áudio do dispositivo…');};
+audio.onloadedmetadata=()=>{if(state.source!=='file')return;if(!Number.isFinite(audio.duration)||audio.duration<5||audio.duration>7200){state.phase='error';status('Escolha um áudio com duração entre 5 segundos e 2 horas.');syncUI();return;}state.fileReady=true;state.duration=audio.duration;state.phase='idle';syncUI();status('Áudio carregado. Você pode cantar livremente ou importar uma melodia guia.');};audio.onerror=()=>{if(state.source!=='file')return;state.fileReady=false;state.phase='error';stopMusic();disableMic();syncUI();status('Não foi possível ler o áudio. Experimente MP3 ou WAV.');};audio.onended=()=>{if(state.source==='file')finishSong();};audio.onwaiting=()=>{if(state.source==='file'&&state.phase==='playing'){state.phase='buffering';syncUI();}};audio.onplaying=()=>{if(state.source==='file'&&state.phase==='buffering'){state.phase='playing';syncUI();}};
+$('micToggle').onclick=async()=>{if(state.mic){if(state.phase==='playing'||state.phase==='buffering'||state.phase==='starting')await pauseSong();disableMic();status('Microfone desligado. Ative novamente para cantar.');}else await enableMic();};$('noiseGate').oninput=()=>{state.gate=Number($('noiseGate').value);$('gateValue').textContent=state.gate+' dB';};$('transpose').onchange=()=>{state.transpose=Number($('transpose').value);};$('octave').onchange=()=>{state.octave=$('octave').checked;};
+$('start').onclick=startSong;$('pause').onclick=pauseSong;$('finish').onclick=()=>finishSong(true);$('again').onclick=()=>{$('result').close();startSong();};$('loadYoutube').onclick=loadYoutube;
+document.querySelectorAll('[data-source]').forEach(b=>{b.onclick=()=>changeSource(b.dataset.source);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-source]')],i=e.key==='Home'?0:e.key==='End'?2:(tabs.indexOf(b)+(e.key==='ArrowRight'?1:2))%3;tabs[i].click();tabs[i].focus();};});
+$('help').onclick=()=>{if(state.phase==='playing')pauseSong();$('helpDialog').showModal();};document.querySelectorAll('dialog .close').forEach(b=>b.onclick=()=>b.closest('dialog').close());
+$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('stage').requestFullscreen();}catch{status('Tela cheia indisponível neste navegador.');}};
+window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)&&!$('result').open&&!$('helpDialog').open&&busy()){e.preventDefault();pauseSong();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.phase==='playing')pauseSong();});window.addEventListener('pagehide',()=>{state.phase='idle';stopMusic();disableMic();});
+function updateLyrics(){
+  const t=state.time,notes=state.guide;if(!busy()&&state.phase!=='ended'){$('lyricLabel').textContent='ACOMPANHE A LETRA';$('lyricLine').textContent=state.source==='demo'?'Respire. A sua voz vai começar.':'Sua música. Sua voz.';$('nextLyric').textContent=state.source==='demo'?'Um exercício original para encontrar sua afinação.':'Cante com o vídeo ou com sua base instrumental.';lyricKey='';return;}
+  if(!notes.length){if(lyricKey!=='free'){$('lyricLabel').textContent='EXERCÍCIO LIVRE';$('lyricLine').textContent='Cante do seu jeito.';$('nextLyric').textContent='A linha rosa acompanha sua voz. Não há letra importada.';lyricKey='free';}return;}
+  const current=notes.find(n=>n.end>=t)||notes[notes.length-1],index=current.phrase,key=index+':'+notes.indexOf(current)+':'+(t>=current.start);if(key===lyricKey)return;lyricKey=key;
+  const group=notes.filter(n=>n.phrase===index),next=notes.filter(n=>n.phrase===index+1);$('lyricLabel').textContent=t<notes[0].start?'PREPARE A RESPIRAÇÃO':'ACOMPANHE A LETRA';$('lyricLine').replaceChildren();for(const n of group){const word=document.createElement('span');word.textContent=n.text||'♪';word.className=t>=n.end?'sung':t>=n.start?'current':'';$('lyricLine').append(word);}$('nextLyric').textContent=state.source==='demo'?(phrases[index+1]?.text||'Deixe a última nota soar.'):next.map(n=>n.text||'♪').join(' ');
+}
+function resize(){const box=canvas.getBoundingClientRect();width=box.width;height=box.height;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=width*dpr;canvas.height=height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}new ResizeObserver(resize).observe(canvas);
+function draw(){
+  const now=performance.now();if(state.phase==='playing'){state.time=getTime();if(state.source==='demo'&&state.time>=state.duration)finishSong();}
+  ctx.clearRect(0,0,width,height);const guided=state.guide.length>0,view=busy()||state.phase==='ended'?state.time:state.mic?now/1000:0,cursor=width*.29,left=44,right=width-14,scale=(right-cursor)/5.8;
+  let lo=48,hi=78;if(guided){const pitches=state.guide.map(n=>n.midi+state.transpose);lo=Math.floor(Math.min(...pitches)-3);hi=Math.ceil(Math.max(...pitches)+3);if(hi-lo<12){lo-=2;hi+=2;}}else if(state.midi!==null&&(state.midi<lo||state.midi>hi)){const center=Math.round(state.midi/12)*12;lo=center-15;hi=center+15;}
+  const top=25,bottom=height-42,y=m=>bottom-(m-lo)/(hi-lo)*(bottom-top),x=t=>cursor+(t-view)*scale;
+  ctx.font='9px system-ui';ctx.textBaseline='middle';for(let note=lo;note<=hi;note++){const yy=y(note),root=note%12===0;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(right,yy);ctx.strokeStyle=root?'#a686b03b':'#a686b013';ctx.lineWidth=1;ctx.stroke();if((hi-lo<=20&&[0,2,4,5,7,9,11].includes((note%12+12)%12))||root){ctx.fillStyle=root?'#c4a6cf':'#705c7c';ctx.fillText(noteName(note),6,yy);}}
+  for(let second=Math.floor(view-3);second<view+7;second++){const xx=x(second);if(xx<left||xx>right)continue;ctx.beginPath();ctx.moveTo(xx,top);ctx.lineTo(xx,bottom);ctx.strokeStyle='#a686b010';ctx.stroke();}
+  ctx.save();ctx.beginPath();ctx.rect(left,top-8,right-left,bottom-top+16);ctx.clip();
+  if(guided){for(const n of state.guide){const start=x(n.start),end=x(n.end);if(end<left||start>right)continue;const yy=y(n.midi+state.transpose),active=view>=n.start&&view<n.end;ctx.lineWidth=active?12:9;ctx.strokeStyle=active?'#c8fff1':n.end<view?'#637c8366':'#83cbc9aa';ctx.lineCap='round';ctx.beginPath();ctx.moveTo(Math.max(left,start)+2,yy);ctx.lineTo(Math.min(right,end)-2,yy);ctx.stroke();if(active){ctx.shadowColor='#94e5df';ctx.shadowBlur=15;ctx.stroke();ctx.shadowBlur=0;}}}
+  let previous=null;ctx.strokeStyle='#f6a1cc';ctx.lineWidth=2.8;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor='#f6a1cc';ctx.shadowBlur=8;
+  for(const h of state.history){if(h.midi===null){previous=null;continue;}let m=h.midi;if(guided&&state.octave){const n=targetAt(h.time);if(n)m+=12*Math.round((n.midi+state.transpose-m)/12);}const p={x:x(h.time),y:y(m),time:h.time};if(previous&&p.time-previous.time<.2&&Math.abs(p.y-previous.y)<height*.65){ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(p.x,p.y);ctx.stroke();}previous=p;}ctx.shadowBlur=0;ctx.restore();
+  ctx.beginPath();ctx.moveTo(cursor,12);ctx.lineTo(cursor,bottom+8);ctx.strokeStyle='#f8d6ef99';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#ddb7d8';ctx.font='7px system-ui';ctx.textAlign='center';ctx.fillText('AGORA',cursor,9);ctx.textAlign='left';
+  if(state.midi!==null&&state.mic){let m=state.midi;const n=guided?targetAt(Math.max(0,state.time-state.latency)):null;if(n&&state.octave)m+=12*Math.round((n.midi+state.transpose-m)/12);const yy=clamp(y(m),top,bottom);ctx.beginPath();ctx.arc(cursor,yy,5,0,Math.PI*2);ctx.fillStyle='#ffe2f8';ctx.shadowColor='#f6a1cc';ctx.shadowBlur=17;ctx.fill();ctx.shadowBlur=0;}
+  if(now-lastUI>100){$('elapsed').textContent=fmt(state.time);$('progress').value=state.time;updateLyrics();lastUI=now;}requestAnimationFrame(draw);
+}
+resetStats();syncUI();resize();requestAnimationFrame(draw);
 
-/* ================== leitura do PDF ================== */
-if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-let OCR=null;
-async function ocrWorker(){
-  if(OCR) return OCR;
-  if(!window.Tesseract) await new Promise((ok,er)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>er(new Error('sem internet pro OCR'));document.head.appendChild(s)});
-  OCR=await Tesseract.createWorker('por');
-  return OCR;
-}
-function linhasDoTSV(tsv){
-  return linhasDePalavras(String(tsv||'').split('\n').slice(1).map(l=>l.split('\t')).filter(c=>c[0]==='5'&&c[11]&&c[11].trim())
-    .map(c=>({x:+c[6],y:+c[7],w:+c[8],h:+c[9],t:c[11].trim(),ln:c[1]+'.'+c[2]+'.'+c[3]+'.'+c[4]})));
-}
-function inclinacao(ws){
-  const por={};ws.forEach(w=>{if(w.ln!=null)(por[w.ln]=por[w.ln]||[]).push(w)});
-  const sl=[];
-  Object.values(por).forEach(l=>{if(l.length<3)return;l.sort((a,b)=>a.x-b.x);const a=l[0],b=l[l.length-1];const dx=(b.x+b.w/2)-(a.x+a.w/2);if(dx<150)return;
-    // regressão simples
-    const n=l.length,mx=l.reduce((s,w)=>s+w.x+w.w/2,0)/n,my=l.reduce((s,w)=>s+w.y+w.h/2,0)/n;
-    let num=0,den=0;l.forEach(w=>{const x=w.x+w.w/2-mx;num+=x*(w.y+w.h/2-my);den+=x*x});if(den)sl.push(num/den)});
-  if(!sl.length)return 0;sl.sort((a,b)=>a-b);const m=sl[sl.length>>1];return Math.abs(m)>0.1?0:m;
-}
-function palavrasDosBlocos(data){
-  const ws=[];
-  (data.blocks||[]).forEach((b,bi)=>(b.paragraphs||[]).forEach((p,pi)=>(p.lines||[]).forEach((l,li)=>(l.words||[]).forEach(w=>{if(w.text&&w.text.trim()&&w.bbox)ws.push({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim(),ln:bi+'.'+pi+'.'+li})}))));
-  if(!ws.length&&data.words)data.words.forEach(w=>{if(w.text&&w.text.trim()&&w.bbox)ws.push({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim()})});
-  return ws;
-}
-function linhasDePalavras(ws){
-  if(!ws.length) return '';
-  const k=inclinacao(ws);
-  ws=ws.map(w=>({...w,y:w.y-k*(w.x+w.w/2)}));
-  const hs=ws.map(w=>w.h).sort((a,b)=>a-b), hm=hs[hs.length>>1]||20;
-  ws.sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
-  const rows=[];
-  ws.forEach(w=>{const cy=w.y+w.h/2;let r=rows.find(r=>Math.abs(r.cy-cy)<hm*0.6);if(!r){r={cy,ws:[]};rows.push(r)}r.ws.push(w);r.cy=(r.cy*(r.ws.length-1)+cy)/r.ws.length});
-  rows.sort((a,b)=>a.cy-b.cy);
-  return rows.map(r=>{r.ws.sort((a,b)=>a.x-b.x);let s='',fim=null;r.ws.forEach(w=>{if(fim!==null)s+=(w.x-fim>hm*1.6)?'    ':' ';s+=w.t;fim=w.x+w.w});return s}).join('\n');
-}
-async function ocr(img){
-  const w=await ocrWorker(); let data;
-  try{({data}=await w.recognize(img,{},{text:true,tsv:true,blocks:true}))}catch(e){({data}=await w.recognize(img))}
-  return linhasDoTSV(data.tsv)||linhasDePalavras(palavrasDosBlocos(data))||data.text||'';
-}
-async function textoPagina(page){
-  const tc=await page.getTextContent();
-  const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str,x:i.transform[4],y:i.transform[5],w:i.width||0}));
-  const linhas=[];
-  its.forEach(it=>{let L=linhas.find(l=>Math.abs(l.y-it.y)<3);if(!L){L={y:it.y,it:[]};linhas.push(L)}L.it.push(it)});
-  linhas.sort((a,b)=>b.y-a.y);
-  return linhas.map(l=>{l.it.sort((a,b)=>a.x-b.x);let s='',fim=null;l.it.forEach(it=>{if(fim!==null){const gap=it.x-fim;s+=gap>12?'    ':(gap>1.5?' ':'')}s+=it.s;fim=it.x+it.w});return s}).join('\n');
-}
-async function lerArquivo(file,aviso){
-  if(/^image\//.test(file.type)){
-    aviso('lendo foto (OCR)…');
-    return await ocr(file);
-  }
-  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
-  let out=[];
-  for(let p=1;p<=pdf.numPages;p++){
-    aviso(`página ${p} de ${pdf.numPages}…`);
-    const page=await pdf.getPage(p);
-    let t=await textoPagina(page);
-    const nt=normC(t);
-    const bons=['nome','cpf','sexo','dados do servidor','requisitad','telefone','orgao','endereco'].filter(w=>nt.includes(w)).length;
-    if(CFG.ocrSempre||t.replace(/\s/g,'').length<40||bons<4){ // escaneado ou texto embutido ruim: OCR
-      aviso(`página ${p} de ${pdf.numPages} — lendo imagem (OCR)…`);
-      const vp=page.getViewport({scale:2.5}); const cv=document.createElement('canvas');
-      cv.width=vp.width; cv.height=vp.height;
-      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
-      t=await ocr(cv);
-    }
-    out.push(t);
-  }
-  return out.join('\n');
-}
-
-/* ================== extrair campos ================== */
-function nomeDoArquivo(n){
-  return n.replace(/\.[a-z0-9]+$/i,'').replace(/[A-Za-z]*\d[\w]*/g,' ').replace(/[_]+/g,' ').replace(/\b\d{1,2}[ .\/-]\d{1,2}[ .\/-]\d{2,4}\b/g,' ')
-   .replace(/\bguias?\b/ig,' ').replace(/\d+/g,' ').replace(/[-–]+/g,' ').replace(/\s+/g,' ').trim();
-}
-function limpaValor(v){return (v||'').replace(/^[\s:\-–.|]+/,'').replace(/[\s:\-–|]+$/,'').replace(/\s{2,}/g,' ').trim()}
-const DATA_RE=/\b\d{1,2}\/\d{1,2}\/\s?\d{4}\b/g;
-function cortaRotulos(linha,rots){ // rots: [[chave, regex do rótulo]]
-  const nl=normC(linha), achados=[];
-  rots.forEach(([k,re])=>{const m=new RegExp('(^|[^a-z0-9])('+re+')(?![a-z0-9])').exec(nl);if(m)achados.push({k,ini:m.index+m[1].length,fim:m.index+m[0].length})});
-  achados.sort((a,b)=>a.ini-b.ini);
-  const out={};achados.forEach((a,i)=>{const v=limpaValor(linha.slice(a.fim,i+1<achados.length?achados[i+1].ini:linha.length).replace(/^[!|'‘`]+/,''));if(v)out[a.k]=v});
-  return {out,primeiro:achados.length?achados[0].ini:-1};
-}
-function nomeExame(cod,resto){
-  let [nome,obs]=resto.split(/\s*-?\s*[o0@]bserv\S*\s*:?\s*-?\s*/i);
-  nome=limpaValor((nome||'').replace(/\s{4,}.*$/,''));obs=limpaValor((obs||'').replace(/\s{4,}.*$/,'').replace(/\.\s*$/,''));
-  if((!nome||/^em consultorio/.test(norm(nome)))&&obs) return {cod,desc:obs};
-  if(/^em consultorio/.test(norm(nome))) nome='Consulta em consultório';
-  return {cod,desc:nome||obs||cod};
-}
-function extrairSIASS(linhas,arquivo){
-  const c={},ordem=[];const pos=k=>{if(c[k]&&!ordem.includes(k))ordem.push(k)};
-  const n=linhas.map(normC);
-  let iServ=n.findIndex(l=>/dados do serv|dados do serv\w*/.test(l));
-  if(iServ<0){const nomes=n.map((l,i)=>/^\W*nome\b/.test(l)?i:-1).filter(i=>i>=0);if(nomes.length>1)iServ=nomes[1]-1;else{const sx=n.findIndex(l=>/\bsexo\b|\bcpf\b/.test(l));if(sx>0)iServ=sx-2}}
-  let iEx=n.findIndex(l=>/requisitad/.test(l)); if(iEx<0)iEx=linhas.length;
-  let iOrg=n.findIndex(l=>/orgao respons/.test(l));
-  const iPer=n.findIndex(l=>/periodo|realiza/.test(l));
-  if(iPer>=0&&(iOrg<0||iPer<iOrg))iOrg=iPer+1;
-  if(iOrg<0||(iServ>=0&&iOrg>iServ))iOrg=0;
-  // cabeçalho
-  for(let i=0;i<(iServ>0?iServ:linhas.length);i++){
-    const d=linhas[i].match(DATA_RE)||[];
-    if(/emiss/.test(n[i])&&d[0]){c.data=d[0].replace(/\s/g,'');pos('data')}
-    if(/periodo|realiza/.test(n[i])&&d.length>=2){c.periodo=`${d[0]} a ${d[1]}`.replace(/\/\s/g,'/');pos('periodo')}
-  }
-  // órgão responsável
-  const fila=[];
-  const semTitulo=L=>L.replace(/[oó0][rn]g\S*\s+respons\S*/ig,' ').replace(/dados\s+d\S*\s+serv\S*/ig,' ').replace(/\s{5,}/g,'    ');
-  const rotSo=l=>{const t=l.replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();return t==='nome'?'orgao':/^uorg sup\w*$/.test(t)?'uorgsup':/^uorg lot\w*$/.test(t)?'unidade':/^endere\w*$/.test(t)?'endereco':/^munic\w*$/.test(t)?'cidade':null};
-  for(let i=Math.max(iOrg,0);i<(iServ>0?iServ:iEx);i++){
-    const L=semTitulo(linhas[i]),l=normC(L);
-    if(!l.replace(/[^a-z0-9]/g,''))continue;
-    const so=rotSo(l); if(so){fila.push(so);continue}
-    if(fila.length&&!/(^|\s)uf(\s|$)|telefone/.test(l)&&!/^\W*\(?\d{2}\)?\s?\d{4}/.test(L)){const k=fila.shift();if(!c[k]){c[k]=limpaValor(L.replace(/^[!|'‘`]+/,''));pos(k)}continue}
-    if(/^\W*nome\b/.test(l)&&!c.orgao){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú0-9]+/,''));if(v.replace(/[^A-Za-z]/g,'').length>=4){c.orgao=v;pos('orgao')}else fila.push('orgao');continue}
-    if(/^\W*uorg\s*sup/.test(l)){c.uorgsup=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('uorgsup');continue}
-    if(/^\W*uorg\s*lot/.test(l)){c.unidade=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('unidade');continue}
-    if(/^\W*endere/.test(l)){c.endereco=limpaValor(L.replace(/^\W*\S+/,''));pos('endereco');continue}
-    if(/(^|\s)uf(\s|$)/.test(l)||/^\W*munic/.test(l)||/telefone/.test(l)){
-      const {out,primeiro}=cortaRotulos(L,[['cidade','munic\\S*'],['uf','uf'],['telefone','telefone']]);
-      if(!out.cidade&&primeiro>0){const v=limpaValor(L.slice(0,primeiro));if(v&&!/^munic/i.test(v))out.cidade=v}
-      if(out.telefone&&!/\d/.test(out.telefone))delete out.telefone;
-      ['cidade','uf','telefone'].forEach(k=>{if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
-    }
-    if(!c.telefone){const m=L.match(/\(?\d{2}\)?\s?\d{4,5}-\d{4}/);if(m){c.telefone=m[0];pos('telefone')}}
-  }
-  // dados do servidor
-  for(let i=iServ;iServ>=0&&i<iEx;i++){
-    const L=semTitulo(linhas[i]),l=normC(L);
-    if(!l.replace(/[^a-z0-9]/g,''))continue;
-    if(/autentic/.test(l))break;
-    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
-    if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L.replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));pos('nome');delete c._nomeProx;continue}
-    const {out}=cortaRotulos(L,[['sexo','sexo'],['nascimento','data\\s*de\\s*nasc\\S*|nascimento'],['cpf','cpf'],['rg','rg']]);
-    if(out.nascimento){const d=out.nascimento.match(DATA_RE);if(d)out.nascimento=d[0].replace(/\s/g,'')}
-    if(out.cpf)out.cpf=out.cpf.replace(/[^\d.\-]/g,'');
-    if(out.rg)out.rg=out.rg.replace(/[^\dXx.\-]/g,'');
-    ['sexo','nascimento','idade','cpf','rg'].forEach(k=>{if(k==='idade'&&c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
-      if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
-    if(c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
-  }
-  delete c._nomeProx;
-  ['nome','orgao'].forEach(k=>{if(c[k])c[k]=c[k].replace(/^[^A-Za-zÀ-ú0-9]+/,'').replace(/\s+[^A-Za-zÀ-ú0-9\s]+$/,'').trim()});
-  const tudo=linhas.join('\n'),serv=linhas.slice(Math.max(iServ,0),iEx).join('\n');
-  if(!c.nascimento){const ds=(serv.match(DATA_RE)||[]).map(d=>d.replace(/\s/g,'')).filter(d=>d!==c.data&&!(c.periodo||'').includes(d));if(ds[0]){c.nascimento=ds[0];pos('nascimento')}}
-  if(!c.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?\d{4,5}-\d{4}\b/);if(m){c.telefone=m[0];pos('telefone')}}
-  if(!c.cidade&&/rio de janeiro/i.test(tudo)){c.cidade='Rio de Janeiro';pos('cidade')}
-  if(c.nome&&/comiss|ministerio|nacional|instituto|universidade|fundacao|secretaria/.test(norm(c.nome))&&!c.orgao){c.orgao=c.nome;delete c.nome}
-  if(!c.cpf){const m=linhas.slice(iServ>0?iServ:0,iEx).join(' ').match(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/);if(m){c.cpf=m[0];pos('cpf')}}
-  const cod=linhas.join(' ').match(/\b[0-9A-FO]{4}(\.[0-9A-FO]{4}){5}\b/);
-  if(cod){c.codigo=cod[0].replace(/O/g,'0');}
-  // exames
-  const exames=[],vistos=new Set();
-  const ini=iEx<linhas.length?iEx+1:Math.max(iServ,0);
-  for(let i=ini;i<linhas.length;i++){
-    if(/\bcpf\b|\brg\b|telefone|uorg/.test(n[i]))continue;
-    const m=linhas[i].match(/(?:^|[^\w])([0-9OlI]{8})\s*[-–]\s*(.*)$/);
-    if(!m)continue;
-    let cd=m[1].replace(/O/g,'0').replace(/[lI]/g,'1');
-    if([...cd].filter((d,i)=>d!=='10101012'[i]).length===1)cd='10101012';
-    if(vistos.has(cd))continue;vistos.add(cd);
-    const ex=nomeExame(cd,m[2]);
-    if(cd==='10101012')ex.desc='Avaliação clínica';
-    exames.push(ex);
-  }
-  if(!exames.length&&iEx<linhas.length){
-    const resto=n.slice(iEx+1,iEx+8).join(' ');
-    if(/consult|avali|aval|clini|10101|0101012/.test(resto))exames.push({cod:'10101012',desc:'Avaliação clínica'});
-  }
-  if(exames.length)ordem.push('exames');
-  if(c.codigo)ordem.push('codigo');
-  if(c.nome&&(/data de nasc|nascimento|\bsexo\b|\bcpf\b|\brg\b|\d/.test(norm(c.nome))||norm(c.nome).replace(/[^a-z]/g,'').length<6)){const ord=ordem.indexOf('nome');if(ord>=0)ordem.splice(ord,1);delete c.nome}
-  if(!c.nome){c.nome=nomeDoArquivo(arquivo);ordem.splice(ordem.indexOf('cidade')+1||ordem.length,0,'nome')}
-  return {campos:c,nomeArq:nomeDoArquivo(arquivo),exames,ordem,tipo:'siass'};
-}
-function dataDoArquivo(n){const m=String(n).match(/(?:^|\D)(\d{1,2})[_.\-\/ ](\d{1,2})[_.\-\/ ](\d{4})(?:\D|$)/);return m&&+m[2]>=1&&+m[2]<=12?`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`:''}
-function extrair(texto,arquivo){
-  const r=extrair0(texto,arquivo);const da=dataDoArquivo(arquivo);
-  if(da){r.campos.dataArquivo=da;r.ordem=['dataArquivo'].concat((r.ordem||[]).filter(k=>k!=='dataArquivo'))}
-  return r;
-}
-function extrair0(texto,arquivo){
-  {const nt=normC(texto);if(/siass|subsistema|uorg|requisitad|dados do serv|orgao respons/.test(nt))return extrairSIASS(texto.split(/\r?\n/).filter(l=>l.trim()),arquivo)}
-  const linhas=texto.split(/\r?\n/).map(l=>l.replace(/\t/g,'    ')).filter(l=>l.trim());
-  const campos={},pos={};
-  linhas.forEach((linha,i)=>{
-    const nl=normC(linha); let ms=[];
-    LABS.forEach(L=>{L.re.lastIndex=0;let m;while((m=L.re.exec(nl))){
-      const ini=m.index+m[1].length, fimRot=ini+m[2].length+(m[3]||'').length, dps=m.index+m[0].length;
-      const temDois=!!m[5]; const antes=nl.slice(0,ini);
-      const inicioSeg=/^\s*$/.test(antes)||/\s{2,}$/.test(antes)||/[|]\s*$/.test(antes);
-      if(L.dois&&!temDois) continue;
-      if(!temDois&&!inicioSeg) continue;
-      ms.push({k:L.k,ini,fim:dps,tam:m[2].length});
-    }});
-    ms.sort((a,b)=>a.ini-b.ini||b.tam-a.tam);
-    const lim=[];ms.forEach(m=>{if(!lim.some(o=>m.ini<o.fim&&o.ini<m.fim))lim.push(m)});
-    lim.forEach((m,j)=>{
-      if(campos[m.k]) return;
-      let fim=j+1<lim.length?lim[j+1].ini:linha.length;
-      let v=linha.slice(m.fim,fim); const corte=v.search(/\S\s{4,}\S/); if(corte>0) v=v.slice(0,corte+1);
-      v=limpaValor(v);
-      if(!v&&lim.length===1&&linhas[i+1]){const prox=normC(linhas[i+1]);if(!/:\s*$/.test(prox)&&!LABS.some(L=>{L.re.lastIndex=0;const r=L.re.exec(prox);return r&&r.index<3&&r[5]}))v=limpaValor(linhas[i+1].split(/\s{4,}/)[0])}
-      if(v){campos[m.k]=v;pos[m.k]=i}
-    });
-  });
-  const tudo=texto.replace(/\s+/g,' ');
-  if(!campos.cpf){const m=tudo.match(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/);if(m)campos.cpf=m[0]}
-  if(!campos.email){const m=tudo.match(/[\w.+-]+@[\w-]+\.[\w.]+/);if(m)campos.email=m[0]}
-  if(!campos.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?9?\d{4}[-\s]\d{4}\b/);if(m)campos.telefone=m[0]}
-  if(campos.ddd&&campos.telefone&&campos.telefone.replace(/\D/g,'').length<=9) campos.telefone=campos.ddd.replace(/\D/g,'')+' '+campos.telefone;
-  const nomeArq=nomeDoArquivo(arquivo);
-  if(!campos.nome&&nomeArq) campos.nome=nomeArq;
-  if(!campos.idade&&campos.nascimento){const m=campos.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const n=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-n.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120)campos.idade=a+' anos'}}
-  if(campos.idade&&pos.idade==null) pos.idade=(pos.nascimento??pos.nome??0)+0.5;
-  if(campos.nome&&pos.nome==null) pos.nome=-1;
-  const exames=extrairExames(linhas,campos);
-  pos.exames=exames.linha??1e9;
-  const ordem=Object.keys(campos).concat(exames.length?['exames']:[]).sort((a,b)=>(pos[a]??1e9-1)-(pos[b]??1e9-1));
-  return {campos,nomeArq,exames:[...exames],ordem};
-}
-function extrairExames(linhas,campos){
-  const pular=/\b(cpf|rg|identidade|telefone|celular|fone|guia|matricula|siape|cep|crm|cns|cartao|carteira|ans|registro|codigo na operadora)\b/;
-  const valores=Object.values(campos).map(v=>v.replace(/\D/g,'')).filter(v=>v.length>=8);
-  const ex=[],vistos=new Set();
-  linhas.forEach((l,li)=>{
-    const m=l.match(/\b(\d{8})\b|\b(\d{2}\.\d{2}\.\d{2}\.\d{2}-?\d)\b/); if(!m) return;
-    const nl=normC(l); const cod=(m[1]||m[2]);
-    if(pular.test(nl)||valores.some(v=>v.includes(cod.replace(/\D/g,'')))) return;
-    let d=l.replace(m[0],' ').replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,' ').replace(/R\$\s*[\d.,]+/g,' ').replace(/^[\s\d.,:;|\-–]+|[\s\d.,:;|\-–]+$/g,'').replace(/\s{2,}/g,' ').trim();
-    if(vistos.has(cod)) return; vistos.add(cod);
-    if(ex.linha==null)ex.linha=li;
-    ex.push({cod,desc:d||cod});
-  });
-  if(ex.length) return ex;
-  const i=linhas.findIndex(l=>/\bexames?\b|\bprocedimentos?\b/.test(normC(l))&&normC(l).length<60);
-  if(i<0) return [];
-  ex.linha=i;
-  for(let j=i+1;j<linhas.length&&ex.length<40;j++){
-    const t=linhas[j].trim(), nt=normC(t);
-    if(/:\s*\S/.test(t)&&LABS.some(L=>{L.re.lastIndex=0;const r=L.re.exec(nt);return r&&r.index<2}))break;
-    if(/^(assinatura|data|local|observa|medico|carimbo)/.test(nt))break;
-    if(t.length>3&&!vistos.has(nt)){vistos.add(nt);ex.push({cod:'',desc:t.replace(/^[\s•\-–*\d.)]+/,'')})}
-  }
-  return ex;
-}
-
-/* ================== estado ================== */
-let GUIAS=[], CTX=null, PEND=null;
-const CFG={voz:LS.get('voz',''),vel:LS.get('vel2',1.1),momento:LS.get('momento',true),
-  modo:LS.get('modo','pdf'),ocrSempre:LS.get('ocrSempre',true),narrar:LS.get('narrar2',['orgao','endereco','cidade','uf','telefone','nome','sexo','nascimento','idade','cpf','rg','cargo','peso','altura','pressao','medicamentos','alergias','diagnostico','exames'])};
-
-/* ================== voz (fala) ================== */
-let VOZES=[], FILA=0;
-function carregarVozes(){
-  const nota=v=>(/BR/i.test(v.lang)?4:0)+(/natural/i.test(v.name)?3:/online/i.test(v.name)?2:/google/i.test(v.name)?1:0);
-  VOZES=speechSynthesis.getVoices().filter(v=>/^pt/i.test(v.lang)).sort((a,b)=>nota(b)-nota(a));
-  const s=$('#voz'); s.innerHTML=VOZES.map(v=>`<option value="${esc(v.name)}">${esc(v.name)} (${v.lang})</option>`).join('')||'<option value="">Nenhuma voz em português instalada</option>';
-  if(CFG.voz&&VOZES.some(v=>v.name===CFG.voz)) s.value=CFG.voz;
-}
-speechSynthesis.onvoiceschanged=carregarVozes; carregarVozes();
-function pedacos(t){
-  const out=[];let atual='';
-  t.split(/(?<=[.!?])\s+/).forEach(f=>{
-    while(f.length>280){let c=f.lastIndexOf(',',280);if(c<80)c=f.lastIndexOf(' ',280);out.push(f.slice(0,c+1));f=f.slice(c+1)}
-    if((atual+' '+f).length>280){if(atual.trim())out.push(atual);atual=f}else atual=(atual?atual+' ':'')+f;
-  });
-  if(atual.trim())out.push(atual);return out;
-}
-const ABREV={fed:'Federal',educ:'de Educação',tecnol:'Tecnológica',tec:'Tecnológico',univ:'Universidade',inst:'Instituto',min:'Ministério',sec:'Secretaria',nac:'Nacional',reg:'Regional',coord:'Coordenação',ger:'Gerência',div:'Divisão',dep:'Departamento',depto:'Departamento',adm:'Administração',superint:'Superintendência',hosp:'Hospital',fund:'Fundação',av:'Avenida',r:'Rua'};
-function expande(t){
-  return t.replace(/\$(?=[\s,.])/g,'S').replace(/([A-Za-zÀ-ú]{2,})\.(?=[A-Za-zÀ-ú])/g,'$1. ')
-    .replace(/\b([A-Za-zÀ-ú]{2,9})\.(?=\s|,|$)/g,(m,w)=>ABREV[w.toLowerCase()]||m)
-    .replace(/\s+,/g,',');
-}
-function limpaFala(t){
-  t=expande(t);
-  return t.replace(/\(([^)]*)\)/g,', $1,').replace(/;/g,',').replace(/\s*,\s*,/g,',').replace(/,\s*\./g,'.')
-   .replace(/(\d)\s?mg\b/gi,'$1 miligramas').replace(/(\d)\s?ml\b/gi,'$1 mililitros').replace(/(\d)\s?kg\b/gi,'$1 quilos')
-   .replace(/([a-zà-ú])\s*\/\s*([a-zà-ú])/gi,'$1 ou $2').replace(/\s+/g,' ').replace(/\s+([,.])/g,'$1').trim();
-}
-const SIGLAS=/^(CPF|CEP|CID|CRM|DDD|SUS|RG|PA|INSS|SIASS|ANS|TUSS|CBO|RX|ECG|EEG|PSA|TSH|HIV|HCV|VDRL|TGO|TGP|GGT|HDL|LDL|RJ|SP|MG|ES|UF|ASO)$/;
-const ACENTO={SAUDE:'SAÚDE',MINISTERIO:'MINISTÉRIO',ORGAO:'ÓRGÃO',SERVICO:'SERVIÇO',SERVICOS:'SERVIÇOS',TECNICO:'TÉCNICO',TECNICA:'TÉCNICA',ORCAMENTO:'ORÇAMENTO',FISICA:'FÍSICA',PUBLICO:'PÚBLICO',PUBLICA:'PÚBLICA',CIENCIA:'CIÊNCIA',ENERGIA:'ENERGIA',UNIAO:'UNIÃO',JUSTICA:'JUSTIÇA',POLICIA:'POLÍCIA',AGENCIA:'AGÊNCIA',ECONOMIA:'ECONOMIA',FAZENDA:'FAZENDA',TECNOLOGIA:'TECNOLOGIA',INSTITUICAO:'INSTITUIÇÃO',FUNDACAO:'FUNDAÇÃO'};
-const acentua=w=>ACENTO[w]||w.replace(/CAO$/,'ÇÃO').replace(/COES$/,'ÇÕES').replace(/([^AEIOUÃÇ])AO$/,'$1ÃO');
-const suaviza=t=>t.replace(/\b[A-Z]{4,}\b/g,acentua).replace(/\b[A-ZÀ-Ý]{2,}\b/g,w=>SIGLAS.test(w)?w:(/^(DA|DE|DO|DAS|DOS|E)$/.test(w)?w.toLowerCase():w[0]+w.slice(1).toLowerCase()));
-function falar(texto){
-  texto=limpaFala(suaviza(texto));
-  return new Promise(ok=>{
-    const minha=++FILA; speechSynthesis.cancel();
-    const partes=pedacos(texto); if(!partes.length) return ok();
-    const voz=VOZES.find(v=>v.name===CFG.voz)||VOZES[0];
-    setFalando(true);
-    partes.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang='pt-BR';if(voz)u.voice=voz;u.rate=CFG.vel;
-      if(i===partes.length-1){u.onend=u.onerror=()=>{if(minha===FILA)setFalando(false);ok()}}
-      speechSynthesis.speak(u)});
-  });
-}
-let PARADAS=0;
-function calar(){PARADAS++;FILA++;speechSynthesis.cancel();setFalando(false)}
-let FALANDO=false, FIM_FALA=0;
-function setFalando(b){FALANDO=b;if(!b)FIM_FALA=Date.now();const p=document.getElementById('controles');if(p)p.hidden=!b;atualizaLampada()}
-
-/* ================== ouvido (reconhecimento) ================== */
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null, QUER_OUVIR=false, ACORDADO_ATE=0;
-function atualizaLampada(){
-  const l=$('#lamp'),e=$('#estado');
-  l.className='lampada'+(FALANDO?' fala':(QUER_OUVIR?' on':''));
-  e.textContent=FALANDO?'falando…':(QUER_OUVIR?($('#continuo').checked?'ouvindo — chame "bot"':'ouvindo…'):'parado');
-  $('#mic').classList.toggle('on',QUER_OUVIR&&!FALANDO);
-}
-function ligarOuvido(){
-  if(!SR){addMsg('bot','Este navegador não reconhece voz. Use o Google Chrome ou o Edge. Dá pra digitar a pergunta embaixo.');return}
-  if(rec){try{rec.abort()}catch(e){}}
-  const cont=$('#continuo').checked;
-  rec=new SR(); rec.lang='pt-BR'; rec.continuous=cont; rec.interimResults=true; rec.maxAlternatives=1;
-  rec.onresult=e=>{
-    let parcial='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const t=e.results[i][0].transcript;
-      if(e.results[i].isFinal){$('#parcial').textContent='';ouviu(t.trim())} else parcial+=t;
-    }
-    if(!FALANDO) $('#parcial').textContent=parcial;
-  };
-  rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){QUER_OUVIR=false;addMsg('bot','O microfone foi bloqueado. Clique no cadeado da barra e libere o microfone.')}else if(e.error==='network'){addMsg('bot','O reconhecimento de voz precisa de internet.')}};
-  rec.onend=()=>{if(QUER_OUVIR&&$('#continuo').checked)setTimeout(()=>{if(QUER_OUVIR)try{rec.start()}catch(e){}},300);else{QUER_OUVIR=false;atualizaLampada()}};
-  QUER_OUVIR=true; atualizaLampada();
-  try{rec.start()}catch(e){}
-}
-function desligarOuvido(){QUER_OUVIR=false;if(rec)try{rec.abort()}catch(e){};$('#parcial').textContent='';atualizaLampada()}
-const ACORDA=/^(ok |ei |oi |e ai |fala )?(bot|bote|boot|bots|robo|robot|bo)\b[\s,]*/;
-function ouviu(t){
-  if(!t) return;
-  if(FALANDO||Date.now()-FIM_FALA<500){ // não ouvir a própria voz, mas deixar mandar parar
-    const nt=norm(t);
-    if(/\b(proxim|pula|passa)/.test(nt))pular(1);else if(/\b(volta|anterior)\b/.test(nt))pular(-1);else if(/\b(para|parar|chega|silencio|cala)\b/.test(nt))calar();
-    return;
-  }
-  if($('#continuo').checked){
-    const n=norm(t);
-    if(!ACORDA.test(n)&&!PEND&&Date.now()>ACORDADO_ATE) return;
-    if(ACORDA.test(n)&&!n.replace(ACORDA,'').trim()){ACORDADO_ATE=Date.now()+9000;addMsg('eu',t);responderEFalar('Oi, pode falar.',true);return}
-    ACORDADO_ATE=0;
-  }
-  perguntar(t);
-}
-$('#mic').onclick=()=>{ if(FALANDO){calar();return} QUER_OUVIR?desligarOuvido():ligarOuvido() };
-$('#continuo').onchange=()=>{LS.set('continuo',$('#continuo').checked);if(QUER_OUVIR)ligarOuvido()};
-document.addEventListener('keydown',e=>{
-  if(!e.target.closest('input,textarea,[contenteditable]')){if(e.key==='ArrowRight'&&FALANDO){e.preventDefault();pular(1)}if(e.key==='ArrowLeft'&&FALANDO){e.preventDefault();pular(-1)}}
-  if(e.key==='F2'){e.preventDefault();$('#mic').click()}if(e.key==='Escape')calar()});
-
-/* ================== conversa ================== */
-function addMsg(quem,texto,html){
-  $('#vazioLog')?.remove();
-  const d=document.createElement('div');d.className='msg '+quem;
-  if(html)d.innerHTML=html;else d.textContent=texto;
-  $('#log').appendChild(d);$('#log').scrollTop=$('#log').scrollHeight;
-}
-async function responderEFalar(resp,semMomento){
-  if(!resp) return;
-  addMsg('bot',resp.tela||resp, resp.html);
-  const fala=resp.fala||resp;
-  await falar((CFG.momento&&!semMomento?'Só um momento. ':'')+fala);
-}
-function perguntar(t){
-  addMsg('eu',t);
-  const r=responder(t);
-  marcarAtual();
-  responderEFalar(r, typeof r==='object'&&r.semMomento);
-}
-$('#formTxt').onsubmit=e=>{e.preventDefault();const t=$('#txt').value.trim();if(t){$('#txt').value='';perguntar(t)}};
-$('#btnParar').onclick=calar;
-$('#pare').onclick=calar;
-$('#proximo').onclick=()=>pular(1);
-$('#voltar').onclick=()=>pular(-1);
-
-/* ================== cérebro ================== */
-const STOP=new Set('bot bote boot robo para pra pro por com sem que qual quais quem quanto quantos quantas quando onde como tem ter tinha esta estao ta tao essa esse isso ela ele dela dele delas deles sua seu suas seus uma uns umas guia guias dados dado fala falar diz dizer diga me mim sobre favor pode poderia voce numero nome exame exames fez faz fazer vai ser sao era foi aqui ali agora tudo todos todas ler leia narra narrar mais menos tambem ainda sim nao senhor senhora dona'.split(' '));
-const PALAVRAS_CAMPO=new Set(CAMPOS.flatMap(c=>c.lab.join(' ').split(' ')).concat('telefone celular unidade trabalha remedio remedios medicamento peso pesa altura cpf exame exames procedimento'.split(' ')));
-const nomeG=g=>g.campos.nome||g.nomeArq||g.arquivo;
-const tokensNome=g=>new Set(norm(nomeG(g)+' '+(g.nomeArq||'')).split(/[^a-z]+/).filter(t=>t.length>=3&&!STOP.has(t)));
-function pontua(q,g){const qt=norm(q).split(/[^a-z]+/).filter(t=>t.length>=3&&!STOP.has(t));const nt=tokensNome(g);let s=0;qt.forEach(t=>{if(nt.has(t))s+=1;else if(t.length>=5&&[...nt].some(n=>n.startsWith(t)||t.startsWith(n)))s+=.6});return s}
-function acharPessoa(q){
-  let melhor=0,lista=[];
-  GUIAS.forEach(g=>{const s=pontua(q,g);if(s>melhor){melhor=s;lista=[g]}else if(s===melhor&&s>0)lista.push(g)});
-  let pediu=null; const re=/\b(?:da|do|de|dona|seu)\s+([a-z]{3,})/g; let m;
-  while((m=re.exec(q))){if(!STOP.has(m[1])&&!PALAVRAS_CAMPO.has(m[1]))pediu=m[1]}
-  if(lista.length>1){
-    const nomes=[...new Set(lista.map(nomeG))];
-    if(nomes.length>1) return {amb:lista,pediu};
-  }
-  return {g:lista[0]||null,pediu};
-}
-const pares=d=>(d.length%2?[d[0]].concat(d.slice(1).match(/../g)):d.match(/../g)).join(' ');
-const MESES='janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro'.split(' ');
-function digitosFalados(v){
-  const d=String(v).replace(/\D/g,''); if(!d) return v;
-  return d.length<=4?d.split('').join(' '):d.match(/.{1,3}/g).join(' ');
-}
-function telFalado(v){
-  const d=String(v).replace(/\D/g,'');
-  if(d.length===11) return d.slice(0,2)+' '+d[2]+' '+pares(d.slice(3));
-  if(d.length===10) return d.slice(0,2)+' '+pares(d.slice(2));
-  return pares(d)||v;
-}
-function dataFalada(v){const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);return m&&MESES[m[2]-1]?`${+m[1]} de ${MESES[m[2]-1]} de ${m[3]}`:v}
-function falaValor(k,v){
-  if(k==='telefone') return telFalado(v);
-  if(k==='unidade'||k==='uorgsup') return v.replace(/^\d+\s*-\s*/,'');
-  if(k==='codigo') return v;
-  if(k==='periodo') return v.replace(DATA_RE,d=>dataFalada(d));
-  if(['cpf','rg','cep','guia','matricula','ddd'].includes(k)) return digitosFalados(v);
-  if(['nascimento','data','dataArquivo'].includes(k)) return dataFalada(v);
-  if(k==='sexo'){const n=norm(v);if(/^f/.test(n))return 'feminino';if(/^m/.test(n))return 'masculino'}
-  if(k==='peso'&&/^\d+([.,]\d+)?$/.test(v.trim())) return v.trim()+' quilos';
-  if(k==='medicamentos'||k==='alergias') return eLista(v.split(/\s*[,;]\s*|\s+e\s+/).filter(Boolean));
-  return v;
-}
-const eLista=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' e '+a[a.length-1];
-const minusc=t=>t.replace(/\b[A-ZÀ-Ý]{3,}\b/g,w=>SIGLAS.test(w)?w:w.toLowerCase()).replace(/^\s*\S/,c=>c.toLowerCase());
-function listaExames(g){return eLista(g.exames.map(e=>minusc(e.desc)))}
-const tit=t=>String(t||'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g,w=>w.toLowerCase());
-function apelido(g){
-  const p=norm(nomeG(g)).split(' '); const iguais=GUIAS.filter(x=>x!==g&&norm(nomeG(x)).split(' ')[0]===p[0]).length;
-  const orig=tit(nomeG(g)).split(' '); let n=orig[0];
-  if(iguais){let i=1;while(i<orig.length&&/^(da|de|do|das|dos|e)$/.test(orig[i]))n+=' '+orig[i++];if(orig[i])n+=' '+orig[i]}
-  return n;
-}
-function art(g){const sx=norm(g.campos.sexo||'');if(/^f/.test(sx))return 'a';if(/^m/.test(sx))return 'o';return /a$/.test(norm(apelido(g)).split(' ')[0])?'a':'o'}
-const noNa=v=>/^(hospital|posto|instituto|ministerio|centro|departamento|setor|nucleo|servico|hu|inca|inss|ibge|ifrj|tribunal|banco|colegio|campus)/.test(norm(v))?'no':/^(comissao|autarquia|procuradoria|controladoria|defensoria|advocacia|justica|policia federal|prefeitura|secretaria|unidade|universidade|fundacao|escola|policia|marinha|receita|agencia|clinica|superintendencia|coordenacao|ufrj|uff|uerj|fiocruz)/.test(norm(v))?'na':'em';
-const de=g=>art(g)==='a'?'da':'do';
-const quemFala=g=>`${art(g)==='a'?'A':'O'} ${apelido(g)}`;
-const FRASE={
-  telefone:(g,v)=>g.tipo==='siass'?`O telefone do órgão ${de(g)} ${apelido(g)} é ${v}.`:`O telefone ${de(g)} ${apelido(g)} é ${v}.`,
-  periodo:(g,v)=>`Os exames podem ser feitos de ${v}.`,
-  unidade:(g,v)=>`${quemFala(g)} trabalha ${noNa(v)} ${v}.`,
-  orgao:(g,v)=>`${quemFala(g)} é do órgão ${v}.`,
-  cargo:(g,v)=>`${quemFala(g)} trabalha como ${minusc(v)}.`,
-  nascimento:(g,v)=>`${quemFala(g)} nasceu em ${v}.`,
-  idade:(g,v)=>`${quemFala(g)} tem ${v}.`,
-  peso:(g,v)=>`${quemFala(g)} pesa ${v}.`,
-  altura:(g,v)=>`${quemFala(g)} tem ${v} de altura.`,
-  medicamentos:(g,v)=>`${quemFala(g)} toma ${v}.`,
-  alergias:(g,v)=>`${quemFala(g)} tem alergia a ${v}.`,
-  cidade:(g,v)=>`A cidade na guia é ${v}.`,
-  endereco:(g,v)=>g.tipo==='siass'?`O endereço do órgão é ${v}.`:`${quemFala(g)} mora em ${v}.`,
-  sexo:(g,v)=>`Na guia está ${v}.`,
-  data:(g,v)=>`A data da guia é ${v}.`,
-  dataArquivo:(g,v)=>`O arquivo ${de(g)} ${apelido(g)} é de ${v}.`,
-  diagnostico:(g,v)=>`O diagnóstico é ${v}.`,
-};
-function narracaoPDF(g){
-  const c=g.campos,N=CFG.narrar,f=[];
-  const ordem=(g.ordem&&g.ordem.length?g.ordem:Object.keys(c).concat(g.exames.length?['exames']:[]));
-  ordem.forEach(k=>{
-    if(!N.includes(k)&&!(k==='orgao'&&N.includes('unidade'))) return;
-    if(k==='exames'){const n=g.exames.length;f.push(`Exames requisitados: ${n===1?'um exame, '+listaExames(g):'total de '+n+' exames: '+listaExames(g)}.`);return}
-    if(!c[k]||!CAMPO[k]) return;
-    const ROT_SIASS={orgao:'Órgão responsável',nome:'Servidor',uf:'UF',cidade:'Município',unidade:'Lotação',telefone:'Telefone do órgão'};
-    const r0=(g.tipo==='siass'&&ROT_SIASS[k])||CAMPO[k].rot;
-    const rot=r0[0].toUpperCase()+r0.slice(1);
-    const v=k==='nome'?tit(c[k]):falaValor(k,c[k]);
-    f.push(`${rot}: ${v}.`);
-  });
-  return f.join(' ')||'Não achei dados nessa guia.';
-}
-function narracaoSIASS(g){
-  const c=g.campos,ela=art(g)==='a'?'Ela':'Ele',f=[];
-  const da=c.dataArquivo||dataDoArquivo(g.arquivo);
-  f.push(da?`Arquivo de ${dataFalada(da)}, guia ${de(g)} ${tit(nomeG(g))}.`:`Essa é a guia ${de(g)} ${tit(nomeG(g))}.`);
-  if(c.nascimento&&c.cpf) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)} e tem o CPF ${digitosFalados(c.cpf)}.`);
-  else if(c.nascimento) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)}.`);
-  else if(c.cpf) f.push(`${ela} tem o CPF ${digitosFalados(c.cpf)}.`);
-  if(c.orgao){
-    let t=`${ela} trabalha ${noNa(c.orgao)} ${c.orgao}`;
-    if(c.telefone) t+=`, cujo telefone é ${telFalado(c.telefone)}`;
-    if(c.cidade) t+=`, ${/^rio\b/.test(norm(c.cidade))?'no':'em'} ${c.cidade}`;
-    f.push(t+'.');
-  }
-  const n=g.exames.length;
-  if(n){
-    f.push(`Os exames que ${ela.toLowerCase()} fez: ${n===1?'um exame':n+' exames'}.`);
-    g.exames.forEach(e=>f.push(`${minusc(e.desc).replace(/^./,x=>x.toUpperCase())}${e.cod?', código '+pares(e.cod):''}.`));
-  } else f.push('Não achei exames na guia.');
-  return f.join(' ');
-}
-function narracao(g){
-  if(g.tipo==='siass') return narracaoSIASS(g);
-  if(CFG.modo==='pdf') return narracaoPDF(g);
-  const c=g.campos,N=CFG.narrar,ela=art(g)==='a'?'ela':'ele',p=[];
-  const ini=N.includes('nome')?`Essa é a guia ${de(g)} ${tit(nomeG(g))}`:`Essa é a guia ${de(g)} ${apelido(g)}`;
-  const loc=c.unidade||c.orgao;
-  if(N.includes('cargo')&&c.cargo&&N.includes('unidade')&&loc) p.push(`trabalha como ${minusc(c.cargo)} ${noNa(loc)} ${loc}`);
-  else if(N.includes('unidade')&&loc) p.push(`trabalha ${noNa(loc)} ${loc}`);
-  else if(N.includes('cargo')&&c.cargo) p.push(`trabalha como ${minusc(c.cargo)}`);
-  if(N.includes('cidade')&&c.cidade) p.push(`${/^rio\b/.test(norm(c.cidade))?'no':'em'} ${c.cidade}`);
-  if(N.includes('idade')&&c.idade) p.push(`tem ${c.idade}`);
-  if(N.includes('peso')&&c.peso) p.push(`pesa ${falaValor('peso',c.peso)}`);
-  if(N.includes('altura')&&c.altura) p.push(`mede ${c.altura}`);
-  if(N.includes('pressao')&&c.pressao) p.push(`está com pressão ${c.pressao}`);
-  if(N.includes('medicamentos')&&c.medicamentos) p.push(`toma ${falaValor('medicamentos',c.medicamentos)}`);
-  if(N.includes('alergias')&&c.alergias) p.push(`tem alergia a ${falaValor('alergias',c.alergias)}`);
-  // junta: "trabalha ... em Rio" fica na mesma parte
-  const partes=[];p.forEach(x=>{if(/^(em|no) /.test(x)&&partes.length&&/^trabalha/.test(partes[partes.length-1]))partes[partes.length-1]+=', '+x;else partes.push(x)});
-  let txt=ini+(partes.length?', '+(partes.length>1?partes.slice(0,-1).join(', ')+' e '+partes[partes.length-1]:partes[0]):'')+'.';
-  const feitos=new Set(['nome','cargo','unidade','orgao','cidade','idade','peso','altura','pressao','medicamentos','alergias','exames']);
-  N.forEach(k=>{if(feitos.has(k)||!c[k]||!CAMPO[k])return;const fv=falaValor(k,c[k]);txt+=' '+(FRASE[k]?FRASE[k](g,fv).replace(quemFala(g),ela[0].toUpperCase()+ela.slice(1)):`O ${CAMPO[k].rot} é ${fv}.`)});
-  if(N.includes('exames')){const n=g.exames.length;txt+=n?` ${ela[0].toUpperCase()+ela.slice(1)} tem ${n===1?'um exame':n+' exames'}: ${listaExames(g)}.`:' Não achei exames na guia.'}
-  return txt;
-}
-function buscaLivre(g,q){
-  const qt=norm(q).split(/[^a-z0-9]+/).filter(t=>t.length>=3&&!STOP.has(t)&&!tokensNome(g).has(t));
-  if(!qt.length) return null;
-  const linhas=g.texto.split(/\r?\n/).filter(l=>l.trim());
-  let best=-1,bi=-1;
-  linhas.forEach((l,i)=>{const nl=normC(l);let s=0;qt.forEach(t=>{if(nl.includes(t))s+=t.length>=5?2:1});if(s>best){best=s;bi=i}});
-  if(best<=0) return null;
-  let r=linhas[bi].replace(/\s{3,}/g,' — ').trim();
-  if(/:\s*$/.test(r)&&linhas[bi+1]) r+=' '+linhas[bi+1].trim();
-  return r;
-}
-function responder(qOrig){
-  let q=norm(qOrig).replace(/[?!.,;]/g,' ').replace(/\s+/g,' ').trim().replace(ACORDA,'').trim();
-  if(!q) return 'Pode falar.';
-  if(/^(para|parar|chega|silencio|cala a boca|cala)$/.test(q)){calar();return null}
-  if(/^(proxim[ao]|pula|pular|passa|avanca)( guia)?$/.test(q)){pular(1);return null}
-  if(/^(volta|voltar|anterior)( guia)?$/.test(q)){pular(-1);return null}
-  if(!GUIAS.length) return 'Ainda não tem nenhuma guia carregada. Sobe os PDFs do lado direito.';
-  if(PEND){
-    const p=PEND; PEND=null;
-    const ord=['primeira','segunda','terceira','quarta','quinta'].findIndex(o=>q.includes(o));
-    let g=ord>=0?p.opcoes[ord]:null;
-    if(!g){let best=0;p.opcoes.forEach(o=>{const s=pontua(q,o);if(s>best){best=s;g=o}})}
-    if(g){CTX=g;return responderSobre(g,p.q)}
-  }
-  if(/\bquant[ao]s (guias|pessoas|pacientes)\b/.test(q)) return `Tenho ${GUIAS.length} ${GUIAS.length===1?'guia carregada':'guias carregadas'}.`;
-  if(/\b(quais (sao )?as guias|quem (tem|esta) (guia|aqui)|de quem sao|lista (as )?guias)\b/.test(q)) return 'As guias são de: '+GUIAS.map(nomeG).join('; ')+'.';
-  if(/\b(narr|le|ler|leia)\w* (todas|tudo)\b/.test(q)&&!/\b(da|do|de) [a-z]{3,}/.test(q.replace(/\b(todas|tudo)\b.*/,''))){narrarTodas();return null}
-  const r=acharPessoa(q);
-  if(r.amb){PEND={q,opcoes:r.amb};return {tela:`Achei ${r.amb.length}: ${r.amb.map(nomeG).join('; ')}. De qual?`,fala:`Tenho ${r.amb.length === 2 ? 'duas' : r.amb.length}: ${eLista(r.amb.map(x=>tit(nomeG(x))))}. Qual delas?`,semMomento:true}}
-  let g=r.g;
-  if(!g){
-    if(r.pediu) return `Não achei nenhuma guia de ${r.pediu}.`;
-    g=CTX||(GUIAS.length===1?GUIAS[0]:null);
-    if(!g) return 'De quem? Fala o nome da pessoa.';
-  }
-  CTX=g; return responderSobre(g,q);
-}
-function responderSobre(g,q){
-  const nome=nomeG(g), c=g.campos;
-  if(/\b(narr|resum|ficha|tudo (da|do|sobre)|le a guia|ler a guia|leia a guia|me conta)/.test(q)) return narracao(g);
-  if(/\bquant\w* exames?\b|\b(numero|quantidade) de exames\b/.test(q)){const n=g.exames.length;return n?{tela:`${nome}: ${n} ${n===1?'exame':'exames'}`,fala:`${quemFala(g)} tem ${n===1?'um exame':n+' exames'} na guia.`}:`Não encontrei exames na guia ${de(g)} ${apelido(g)}.`}
-  if(/\b(exames?|procedimentos?)\b/.test(q)&&!/\b(tipo|data|codigo)\b/.test(q)){const n=g.exames.length;return n?{tela:`Exames de ${nome} (${n}): `+g.exames.map(e=>e.desc+(e.cod?` (${e.cod})`:'')).join('; '),fala:`${quemFala(g)} tem ${n===1?'um exame':n+' exames'}: ${listaExames(g)}.`}:`Não encontrei exames na guia ${de(g)} ${apelido(g)}.`}
-  if(/\bcodigos?\b/.test(q)&&g.exames.some(e=>e.cod)) return {tela:'Códigos: '+g.exames.map(e=>e.cod).join(', '),fala:'Os códigos são '+eLista(g.exames.filter(e=>e.cod).map(e=>pares(e.cod)))+'.'};
-  for(const cp of CAMPOS){
-    if(!cp.re.test(q)) continue;
-    let v=c[cp.k];
-    if(cp.k==='unidade'&&c.orgao){const lot=c.unidade?falaValor('unidade',c.unidade):'';return {tela:`${nome}: ${c.orgao}${c.unidade?' / lotação '+c.unidade:''}`,fala:`${quemFala(g)} trabalha ${noNa(c.orgao)} ${c.orgao}.`}}
-    if(!v&&cp.k==='uf') v=c.cidade&&(c.cidade.match(/\b[A-Z]{2}\b/)||[])[0];
-    if(v){const fv=falaValor(cp.k,v);return {tela:`${cp.rot[0].toUpperCase()+cp.rot.slice(1)} de ${nome}: ${v}`,fala:FRASE[cp.k]?FRASE[cp.k](g,fv):`${/a$|ão$|gem$/.test(cp.rot)?'A':'O'} ${cp.rot} ${de(g)} ${apelido(g)} é ${fv}.`}}
-    const livre=buscaLivre(g,q);
-    if(livre) return {tela:`Na guia de ${nome} achei: ${livre}`,fala:`Na guia ${de(g)} ${apelido(g)} está assim: ${livre}.`};
-    return `Não encontrei ${cp.rot} na guia ${de(g)} ${apelido(g)}.`;
-  }
-  if(/\b(nome|quem e)\b/.test(q)&&c.nome) return {tela:`Nome: ${c.nome}`,fala:`O nome completo é ${tit(c.nome)}.`};
-  const livre=buscaLivre(g,q);
-  if(livre) return {tela:`Na guia de ${nome} achei: ${livre}`,fala:`Na guia ${de(g)} ${apelido(g)} está assim: ${livre}.`};
-  return `Não achei isso na guia ${de(g)} ${apelido(g)}. Pergunta de outro jeito.`;
-}
-let SEQ=false;
-async function narrarDe(i,seq){
-  if(!GUIAS.length) return;
-  i=Math.max(0,Math.min(i,GUIAS.length-1)); SEQ=seq;
-  const minha=++PARADAS; FILA++; speechSynthesis.cancel();
-  for(let k=i;k<GUIAS.length;k++){
-    if(PARADAS!==minha) return;
-    const g=GUIAS[k]; CTX=g; marcarAtual();
-    const t=narracao(g); addMsg('bot',t);
-    await falar(t);
-    if(!seq) break;
-  }
-}
-function narrarTodas(){ if(GUIAS.length){addMsg('bot',`Narrando ${GUIAS.length} guias…`);narrarDe(0,true)} }
-function pular(d){
-  if(!GUIAS.length) return;
-  const i=CTX?GUIAS.indexOf(CTX):-1, j=i+d;
-  if(j<0){calar();falar('Essa é a primeira guia.');return}
-  if(j>=GUIAS.length){calar();falar('Essa é a última guia.');return}
-  narrarDe(j,SEQ);
-}
-
-/* ================== lista de guias ================== */
-const ICO={
-  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
-  abrir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
-  cima:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 15l6-6 6 6"/></svg>',
-  baixo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>',
-  lixo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
-};
-function render(){
-  $('#contagem').textContent=GUIAS.length?`${GUIAS.length} ${GUIAS.length===1?'carregada':'carregadas'}`:'nenhuma';
-  $('#lista').innerHTML=GUIAS.map(g=>{
-    const c=g.campos;
-    const sub=[c.dataArquivo||dataDoArquivo(g.arquivo),c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
-    const rows=CAMPOS.map(cp=>`<tr><td>${esc(cp.rot)}</td><td contenteditable data-k="${cp.k}">${esc(c[cp.k]||'')}</td></tr>`).join('');
-    return `<article class="guia${SEL&&SEL.includes(g.id)?' sel':''}" data-id="${g.id}">
-      <div class="cab"><span class="pega" title="Arraste pra mudar a ordem">⠿</span><span class="num">${SEL?(SEL.includes(g.id)?SEL.indexOf(g.id)+1:'·'):GUIAS.indexOf(g)+1}</span><div class="quem"><div class="nome">${esc(nomeG(g))}</div><div class="sub">${esc(sub)}</div></div>
-      <span class="setas"><button class="ico mini" data-a="subir" title="Subir na lista">${ICO.cima}</button><button class="ico mini" data-a="descer" title="Descer na lista">${ICO.baixo}</button></span>
-      <button class="ico" data-a="narrar" title="Narrar esta guia">${ICO.play}</button>
-      <button class="ico" data-a="abrir" title="Ver e corrigir dados">${ICO.abrir}</button>
-      <button class="ico" data-a="apagar" title="Apagar guia">${ICO.lixo}</button></div>
-      <div class="corpo"><table>${rows}</table>
-      <ol class="exs">${g.exames.map(e=>`<li>${esc(e.desc)} ${e.cod?`<span class="cod">${esc(e.cod)}</span>`:''}</li>`).join('')||'<li>nenhum exame encontrado</li>'}</ol>
-      <div class="rodape-corpo"><button class="lnk" data-a="bruto">Ver texto lido do PDF</button><span class="cod">${esc(g.arquivo)}</span></div>
-      <div class="bruto">${esc(g.texto)}</div></div></article>`}).join('');
-  marcarAtual();
-}
-function marcarAtual(){document.querySelectorAll('.guia').forEach(el=>el.classList.toggle('atual',!!CTX&&el.dataset.id===CTX.id))}
-let SEL=null;
-function modoSel(on){SEL=on?[]:null;$('#barraSel').hidden=!on;$('#lista').classList.toggle('selecionando',on);atualizaSel();render()}
-function atualizaSel(){if(SEL)$('#selInfo').textContent=SEL.length?`${SEL.length} escolhida${SEL.length>1?'s':''} — continue tocando ou aperte OK`:'Toque nas guias na ordem que você quer (1, 2, 3…)'}
-$('#lista').addEventListener('click',e=>{
-  if(!SEL)return; const a=e.target.closest('.guia'); if(!a)return; e.stopImmediatePropagation(); e.preventDefault();
-  const id=a.dataset.id,i=SEL.indexOf(id); if(i>=0)SEL.splice(i,1);else SEL.push(id);
-  atualizaSel(); render();
-},true);
-function salvarOrdem(){GUIAS.forEach((g,i)=>{if(g.pos!==i){g.pos=i;DB.salvar(g)}})}
-function mover(g,para){const i=GUIAS.indexOf(g);if(para<0||para>=GUIAS.length||para===i)return;GUIAS.splice(i,1);GUIAS.splice(para,0,g);salvarOrdem();render();
-  const el=document.querySelector(`.guia[data-id="${g.id}"]`);if(el)el.scrollIntoView({block:'nearest'})}
-let ARRASTA=null;
-$('#lista').addEventListener('mousedown',e=>{const h=e.target.closest('.pega');if(h)h.closest('.guia').draggable=true});
-document.addEventListener('mouseup',()=>document.querySelectorAll('.guia[draggable="true"]').forEach(x=>{if(!ARRASTA)x.draggable=false}));
-$('#lista').addEventListener('dragstart',e=>{const a=e.target.closest('.guia');if(!a)return;ARRASTA=a.dataset.id;a.classList.add('arrastando');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',ARRASTA)});
-$('#lista').addEventListener('dragend',()=>{ARRASTA=null;document.querySelectorAll('.guia').forEach(x=>{x.classList.remove('arrastando','alvo-cima','alvo-baixo');x.draggable=false})});
-$('#lista').addEventListener('dragover',e=>{if(!ARRASTA)return;e.preventDefault();e.stopPropagation();const a=e.target.closest('.guia');document.querySelectorAll('.guia').forEach(x=>x.classList.remove('alvo-cima','alvo-baixo'));if(!a||a.dataset.id===ARRASTA)return;const r=a.getBoundingClientRect();a.classList.add(e.clientY<r.top+r.height/2?'alvo-cima':'alvo-baixo')});
-$('#lista').addEventListener('drop',e=>{if(!ARRASTA)return;e.preventDefault();e.stopPropagation();const a=e.target.closest('.guia');const g=GUIAS.find(x=>x.id===ARRASTA);if(!a||!g||a.dataset.id===ARRASTA)return;
-  const alvo=GUIAS.find(x=>x.id===a.dataset.id);const r=a.getBoundingClientRect();const depois=e.clientY>=r.top+r.height/2;
-  GUIAS.splice(GUIAS.indexOf(g),1);let j=GUIAS.indexOf(alvo)+(depois?1:0);GUIAS.splice(j,0,g);salvarOrdem();render()});
-$('#lista').addEventListener('click',e=>{
-  const b=e.target.closest('button');if(!b)return;const art=b.closest('.guia');const g=GUIAS.find(x=>x.id===art.dataset.id);if(!g)return;
-  if(b.dataset.a==='subir'){mover(g,GUIAS.indexOf(g)-1);return}
-  if(b.dataset.a==='descer'){mover(g,GUIAS.indexOf(g)+1);return}
-  if(b.dataset.a==='abrir')art.classList.toggle('aberta');
-  if(b.dataset.a==='bruto')art.querySelector('.bruto').classList.toggle('ver');
-  if(b.dataset.a==='narrar'){narrarDe(GUIAS.indexOf(g),false)}
-  if(b.dataset.a==='apagar'&&confirm(`Apagar a guia de ${nomeG(g)}?`)){GUIAS=GUIAS.filter(x=>x!==g);if(CTX===g)CTX=null;DB.apagar(g.id);render()}
-});
-$('#lista').addEventListener('focusout',e=>{
-  const td=e.target.closest('td[data-k]');if(!td)return;const g=GUIAS.find(x=>x.id===td.closest('.guia').dataset.id);
-  const v=td.textContent.trim();if((g.campos[td.dataset.k]||'')===v)return;
-  if(v)g.campos[td.dataset.k]=v;else delete g.campos[td.dataset.k];DB.salvar(g);
-  const art=td.closest('.guia');art.querySelector('.nome').textContent=nomeG(g);
-});
-$('#lista').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('td[contenteditable]')){e.preventDefault();e.target.blur()}});
-$('#limpar').onclick=()=>{if(GUIAS.length&&confirm('Apagar TODAS as guias carregadas?')){GUIAS=[];CTX=null;DB.limpar();render()}};
-$('#narrarTodas').onclick=narrarTodas;
-$('#selOrdem').onclick=()=>{if(GUIAS.length>1)modoSel(!SEL)};
-$('#selCancela').onclick=()=>modoSel(false);
-$('#selOk').onclick=()=>{if(SEL&&SEL.length){const esc=SEL.map(id=>GUIAS.find(g=>g.id===id)).filter(Boolean);GUIAS=esc.concat(GUIAS.filter(g=>!SEL.includes(g.id)));salvarOrdem()}modoSel(false)};
-$('#az').onclick=()=>{if(GUIAS.length>1&&confirm('Colocar as guias em ordem alfabética? A ordem que você montou será trocada.')){GUIAS.sort((a,b)=>nomeG(a).localeCompare(nomeG(b),'pt'));salvarOrdem();render()}};
-
-/* ================== subir arquivos ================== */
-async function subir(files){
-  files=[...files].filter(f=>/pdf$/i.test(f.name)||/^image\//.test(f.type));
-  for(let i=0;i<files.length;i++){
-    const f=files[i]; const aviso=t=>$('#fila').textContent=`(${i+1}/${files.length}) ${f.name}: ${t}`;
-    try{
-      const texto=await lerArquivo(f,aviso);
-      const {campos,nomeArq,exames,ordem,tipo}=extrair(texto,f.name);
-      const velha=GUIAS.find(g=>g.arquivo===f.name);
-      const g={id:velha?velha.id:(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),arquivo:f.name,texto,campos,nomeArq,exames,ordem,tipo:tipo||'',em:Date.now(),pos:velha?velha.pos:GUIAS.length};
-      if(velha)GUIAS[GUIAS.indexOf(velha)]=g;else GUIAS.push(g);
-      DB.salvar(g);
-    }catch(err){addMsg('bot',`Não consegui ler ${f.name}: ${err.message||err}`)}
-  }
-  $('#fila').textContent=files.length?`${files.length} ${files.length===1?'arquivo lido':'arquivos lidos'}.`:'';
-  salvarOrdem();
-  render();
-}
-$('#btnSubir').onclick=()=>$('#arq').click();
-$('#arq').onchange=e=>{subir(e.target.files);e.target.value=''};
-const solta=$('#solta');
-['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(!ARRASTA&&[...(e.dataTransfer.types||[])].includes('Files'))solta.classList.add('sobre')}));
-['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||!e.relatedTarget)solta.classList.remove('sobre')}));
-document.addEventListener('drop',e=>{if(!ARRASTA&&e.dataTransfer.files.length)subir(e.dataTransfer.files)});
-
-/* ================== ajustes ================== */
-$('#btnAjustes').onclick=()=>{
-  carregarVozes(); $('#vel').value=CFG.vel; $('#velTxt').textContent=CFG.vel.toFixed(2).replace('.',',')+'×'; $('#momento').checked=CFG.momento; $('#modo').value=CFG.modo; $('#ocrSempre').checked=CFG.ocrSempre;
-  $('#marcas').innerHTML=[...CAMPOS.filter(c=>!['mae','pai','ddd'].includes(c.k)),{k:'exames',rot:'exames'}].map(c=>`<label><input type="checkbox" value="${c.k}" ${CFG.narrar.includes(c.k)?'checked':''}> ${esc(c.rot)}</label>`).join('');
-  $('#dlg').showModal();
-};
-$('#voz').onchange=e=>{CFG.voz=e.target.value;LS.set('voz',CFG.voz)};
-$('#vel').oninput=e=>{CFG.vel=+e.target.value;$('#velTxt').textContent=CFG.vel.toFixed(2).replace('.',',')+'×';LS.set('vel2',CFG.vel)};
-$('#ocrSempre').onchange=e=>{CFG.ocrSempre=e.target.checked;LS.set('ocrSempre',CFG.ocrSempre)};
-$('#modo').onchange=e=>{CFG.modo=e.target.value;LS.set('modo',CFG.modo)};
-$('#momento').onchange=e=>{CFG.momento=e.target.checked;LS.set('momento',CFG.momento)};
-$('#marcas').onchange=()=>{const ordem=[...$('#marcas').querySelectorAll('input')].filter(i=>i.checked).map(i=>i.value);CFG.narrar=ordem;LS.set('narrar2',ordem)};
-$('#testarVoz').onclick=()=>falar('Oi! Eu sou o bot das guias. Pode perguntar.');
-$('#fecharDlg').onclick=()=>$('#dlg').close();
-
-/* ================== início ================== */
-(async()=>{
-  $('#continuo').checked=LS.get('continuo',false);
-  if(!window.pdfjsLib) addMsg('bot','Sem internet: não consegui carregar o leitor de PDF. Conecte e reabra.');
-  try{await DB.abrir();GUIAS=await DB.todas();GUIAS.sort((a,b)=>((a.pos??1e9)-(b.pos??1e9))||nomeG(a).localeCompare(nomeG(b),'pt'));salvarOrdem()}catch(e){}
-  render();
-  if(!SR) $('#dica').textContent='Este navegador não tem reconhecimento de voz. Use o Chrome ou o Edge — ou digite embaixo.';
-})();
-</script>
-</body>
-</html>
+</script></body></html>
