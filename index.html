@@ -138,7 +138,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
   <section class="conversa">
     <div class="topo">
       <span class="lampada" id="lamp"></span>
-      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v18</small>
+      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v23</small>
       <span class="estado" id="estado">parado</span>
       <button id="btnParar" title="Parar de falar">Calar</button>
       <button id="btnAjustes">Ajustes</button>
@@ -309,6 +309,13 @@ function linhasDePalavras(ws){
   rows.sort((a,b)=>a.cy-b.cy);
   return rows.map(r=>{r.ws.sort((a,b)=>a.x-b.x);let s='',fim=null;r.ws.forEach(w=>{if(fim!==null)s+=(w.x-fim>hm*1.6)?'    ':' ';s+=w.t;fim=w.x+w.w});return s}).join('\n');
 }
+function melhoraImagem(cv,ctx){
+  try{const im=ctx.getImageData(0,0,cv.width,cv.height),d=im.data;let mn=255,mx=0;
+    for(let i=0;i<d.length;i+=4){const r=d[i],gg=d[i+1],b=d[i+2];let g=(r*.3+gg*.59+b*.11);if(b>r+35&&b>gg+15)g=255;/* tira caneta azul (assinatura) */d[i]=g;if(g<mn)mn=g;if(g>mx)mx=g}
+    const k=255/Math.max(1,mx-mn);
+    for(let i=0;i<d.length;i+=4){let g=(d[i]-mn)*k;g=g<140?Math.max(0,g*.6):Math.min(255,g*1.1);d[i]=d[i+1]=d[i+2]=g}
+    ctx.putImageData(im,0,0)}catch(e){}
+}
 async function ocr(img){
   const w=await ocrWorker(); let data;
   try{({data}=await w.recognize(img,{},{text:true,tsv:true,blocks:true}))}catch(e){({data}=await w.recognize(img))}
@@ -351,7 +358,7 @@ async function lerArquivo(file,aviso){
 
 /* ================== extrair campos ================== */
 function nomeDoArquivo(n){
-  return n.replace(/\.[a-z0-9]+$/i,'').replace(/[A-Za-z]*\d[\w]*/g,' ').replace(/[_]+/g,' ').replace(/\b\d{1,2}[ .\/-]\d{1,2}[ .\/-]\d{2,4}\b/g,' ')
+  return n.replace(/(\.pdf)+$/i,'').replace(/\.[a-z0-9]+$/i,'').replace(/[_]+/g,' ').replace(/\b\S*\d\S*\b/g,' ').replace(/\bpdf\b/ig,' ').replace(/[_]+/g,' ').replace(/\b\d{1,2}[ .\/-]\d{1,2}[ .\/-]\d{2,4}\b/g,' ')
    .replace(/\bguias?\b/ig,' ').replace(/\d+/g,' ').replace(/[-–]+/g,' ').replace(/\s+/g,' ').trim();
 }
 const semRepetida=t=>String(t||'').replace(/(^|\s)(\S+)(?:\s+\2)+(?=\s|$)/gi,'$1$2');
@@ -359,9 +366,15 @@ function limpaValor(v){return semRepetida(v||'').replace(/^[\s:\-–.|]+/,'').re
 const DATA_RE=/\b\d{1,2}\/\d{1,2}\/\s?\d{4}\b/g;
 const dig=s=>String(s).replace(/[Oo]/g,'0').replace(/[lIi|!]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(/Z/g,'2').replace(/g/g,'9');
 function achaData(txt,minAno,maxAno){
-  const re=/([0-9OolIiSBZg|]{1,2})\s*[\/\-.]\s*([0-9OolIiSBZg|]{1,2})\s*[\/\-.]\s*([0-9OolIiSBZg|]{4})/g;let m;
+  const re=/([0-9OolIiSBZg|]{1,2})\s*[\/\-.°º]\s*([0-9OolIiSBZg|]{1,2})\s*[\/\-.°º\s]\s*([0-9OolIiSBZg|]{4})/g;let m;
   while((m=re.exec(String(txt)))){const d=+dig(m[1]),me=+dig(m[2]),a=+dig(m[3]);
     if(d>=1&&d<=31&&me>=1&&me<=12&&a>=(minAno||1900)&&a<=(maxAno||2100))return `${String(d).padStart(2,'0')}/${String(me).padStart(2,'0')}/${a}`}
+  return '';
+}
+function cpfOk(d){if(!/^\d{11}$/.test(d)||/^(\d)\1+$/.test(d))return false;const dv=n=>{let s=0;for(let i=0;i<n;i++)s+=+d[i]*(n+1-i);const r=s*10%11;return r===10?0:r};return dv(9)===+d[9]&&dv(10)===+d[10]}
+function achaCpf(txt){
+  const cands=(String(txt).match(/[0-9OlI][0-9OlI.\-\s]{8,16}[0-9OlI]/g)||[]).map(x=>dig(x).replace(/\D/g,''));
+  for(const d of cands){if(cpfOk(d))return d;if(d.length===10&&cpfOk('0'+d))return '0'+d;if(d.length===9&&cpfOk('00'+d))return '00'+d}
   return '';
 }
 function achaTel(txt){
@@ -380,8 +393,20 @@ const EXAMES_BASE={'10101012':'Avaliação clínica','40303136':'Sangue oculto, 
 function dicExames(){return Object.assign({},EXAMES_BASE,LS.get('exames',{}))}
 function aprendeExame(cod,desc){if(!/^\d{8}$/.test(cod)||EXAMES_BASE[cod])return;if(norm(desc).replace(/[^a-z]/g,'').length<8)return;const d=LS.get('exames',{});if(!d[cod]){d[cod]=desc;LS.set('exames',d)}}
 function parecido(a,b){const ta=norm(a).split(/[^a-z]+/).filter(t=>t.length>=4),tb=new Set(norm(b).split(/[^a-z]+/).filter(t=>t.length>=4));if(!ta.length||!tb.size)return false;return ta.filter(t=>tb.has(t)||[...tb].some(u=>u.slice(0,5)===t.slice(0,5))).length>=Math.min(2,tb.size)}
+const bigr=t=>{t=norm(t).replace(/[^a-z]/g,'');const o=[];for(let i=0;i<t.length-1;i++)o.push(t.slice(i,i+2));return o};
+function dice(a,b){const A=bigr(a),B=bigr(b);if(!A.length||!B.length)return 0;const m=new Map();B.forEach(x=>m.set(x,(m.get(x)||0)+1));let c=0;A.forEach(x=>{if(m.get(x)){c++;m.set(x,m.get(x)-1)}});return 2*c/(A.length+B.length)}
+function nomesConhecidos(){return [...new Set(['Avaliação clínica','Consulta oftalmológica','Consulta em consultório'].concat(Object.values(dicExames())))]}
+function melhorNome(desc){let best='',v=0;nomesConhecidos().forEach(k=>{const d=dice(desc,k);if(d>v){v=d;best=k}});return {nome:best,v}}
+function nomeRuim(desc){
+  const ws=norm(desc).split(/\s+/).filter(Boolean);
+  if(!ws.some(w=>w.replace(/[^a-z]/g,'').length>=4&&/[aeiou]/.test(w)))return true;
+  if(ws.some(w=>/^[a-z]{3,}$/.test(w)&&!/[aeiou]/.test(w)))return true;
+  if(ws.some(w=>/[a-z]\d|\d[a-z]/.test(w)))return true;
+  return false;
+}
 function corrigeCodigo(cd,desc){
   const dic=dicExames(); if(dic[cd])return cd;
+  if([...'10101012'].filter((x,i)=>x!==cd[i]).length===1&&/consult|serv|aval|clin|oftal/.test(norm(desc||'')))return '10101012';
   const perto=Object.keys(dic).filter(k=>k!=='10101012'&&[...k].filter((x,i)=>x!==cd[i]).length===1);
   return perto.length===1&&parecido(desc||'',dic[perto[0]])?perto[0]:cd;
 }
@@ -408,6 +433,10 @@ function extrairSIASSvarias(linhas,arquivo){
   const qtd=r=>Object.keys(r.campos).length;
   const base=rs.slice().sort((a,b)=>qtd(b)-qtd(a))[0];
   const out={...base,campos:{...base.campos},exames:[],ordem:[...base.ordem]};
+  {const na=nomeDoArquivo(arquivo);const ns=rs.map(r=>r.campos.nome||'').filter(Boolean);
+   const nomeBom=na&&na.split(/\s+/).length>=2?ns.sort((a,b)=>dice(b,na)-dice(a,na))[0]:ns.sort((a,b)=>b.split(/\s+/).length-a.split(/\s+/).length)[0];
+   if(nomeBom)out.campos.nome=nomeBom;}
+  const cpfBom=rs.map(r=>r.campos.cpf).find(x=>x&&cpfOk(x.replace(/\D/g,'')));if(cpfBom)out.campos.cpf=cpfBom;
   rs.forEach(r=>Object.keys(r.campos).forEach(k=>{if(!out.campos[k]){out.campos[k]=r.campos[k];if(!out.ordem.includes(k))out.ordem.push(k)}}));
   const vistos=new Set();rs.forEach(r=>r.exames.forEach(e=>{if(!vistos.has(e.cod)){vistos.add(e.cod);out.exames.push(e)}}));
   if(out.exames.length&&!out.ordem.includes('exames'))out.ordem.push('exames');
@@ -444,6 +473,9 @@ function extrairSIASS(linhas,arquivo){
     if(/^\W*endere/.test(l)){c.endereco=limpaValor(L.replace(/^\W*\S+/,''));pos('endereco');continue}
     if(/(^|\s)uf(\s|$)/.test(l)||/^\W*munic/.test(l)||/telefone/.test(l)){
       const {out,primeiro}=cortaRotulos(L,[['cidade','munic\\S*'],['uf','uf'],['telefone','telefone']]);
+      {const segs=linhas[i].split(/\s{4,}/).map(x=>x.trim()).filter(Boolean);const im=segs.findIndex(x=>/^munic/i.test(normC(x)));
+       const cand=im>=0?segs[im+1]:(/^munic/i.test(normC(segs[0]||''))?'':segs[0]);
+       if(cand&&!/telefone|\d/.test(normC(cand)))out.cidade=cand;}
       if(!out.cidade&&primeiro>0){const v=limpaValor(L.slice(0,primeiro));if(v&&!/^munic/i.test(v))out.cidade=v}
       if(out.telefone){const t=achaTel(out.telefone);if(t)out.telefone=t;else delete out.telefone}
       ['cidade','uf','telefone'].forEach(k=>{if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
@@ -455,7 +487,7 @@ function extrairSIASS(linhas,arquivo){
     const L=semTitulo(linhas[i]),l=normC(L);
     if(!l.replace(/[^a-z0-9]/g,''))continue;
     if(/autentic/.test(l))break;
-    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
+    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}(sexo|data|cpf|rg|nasc)\b.*$/i,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
     if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L.replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));pos('nome');delete c._nomeProx;continue}
     const {out}=cortaRotulos(L,[['sexo','sexo'],['nascimento','data\\s*de\\s*nasc\\S*|nascimento'],['cpf','cpf'],['rg','rg']]);
     if(out.nascimento){const d=achaData(out.nascimento,1920,new Date().getFullYear()-14);if(d)out.nascimento=d;else delete out.nascimento}
@@ -466,6 +498,10 @@ function extrairSIASS(linhas,arquivo){
     if(c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
   }
   delete c._nomeProx;
+  {const sv=linhas.slice(Math.max(iServ,0),iEx);const linhaCpf=sv.find(l=>/\bcpf\b|\bcer\b|\bcpe\b/i.test(l))||'';
+   const ok=achaCpf((c.cpf||'')+' ')||achaCpf(linhaCpf)||achaCpf(sv.join(' '));
+   if(ok){c.cpf=ok;pos('cpf')}else if(c.cpf){c.cpfDuvida=1}}
+  if(!c.nome){const sv=linhas.slice(Math.max(iServ,0)+1,iEx);const ln=sv.find(l=>{const t=l.replace(/\s{4,}.*$/,'').trim();return /^[A-ZÀ-Ý][A-ZÀ-Ý .'-]{8,}$/.test(t)&&t.split(/\s+/).length>=2&&!/sexo|cpf|nasc|masculino|feminino|autentic/i.test(t)});if(ln){c.nome=ln.replace(/\s{4,}.*$/,'').trim();pos('nome')}}
   ['nome','orgao'].forEach(k=>{if(c[k])c[k]=c[k].replace(/^[^A-Za-zÀ-ú0-9]+/,'').replace(/\s+[^A-Za-zÀ-ú0-9\s]+$/,'').trim()});
   if(c.nome)c.nome=c.nome.replace(/[^A-Za-zÀ-ú]+$/,'');
   const tudo=linhas.join('\n'),serv=linhas.slice(Math.max(iServ,0),iEx).join('\n');
@@ -486,11 +522,17 @@ function extrairSIASS(linhas,arquivo){
     const bruto=m[1].replace(/\s/g,'').replace(/O/g,'0').replace(/[lI]/g,'1');
     if(!/^\d{8}$/.test(bruto))continue;
     let ex=nomeExame(bruto,m[2]);
-    const cd=corrigeCodigo(bruto,ex.desc); ex.cod=cd;
+    const cd=corrigeCodigo(bruto,m[2]); ex.cod=cd;
     if(vistos.has(cd))continue;vistos.add(cd);
     const dic=dicExames();
-    if(cd!=='10101012'&&dic[cd]&&norm(ex.desc).replace(/[^a-z]/g,'').length<8)ex.desc=dic[cd];
-    else if(cd!=='10101012')aprendeExame(cd,ex.desc);
+    if(EXAMES_BASE[cd]&&cd!=='10101012')ex.desc=EXAMES_BASE[cd];
+    else if(cd!=='10101012'&&dic[cd]&&(norm(ex.desc).replace(/[^a-z]/g,'').length<8||parecido(ex.desc,dic[cd])))ex.desc=dic[cd];
+    else{
+      const mb=melhorNome(ex.desc);
+      if(mb.v>=0.7)ex.desc=mb.nome;
+      else if(nomeRuim(ex.desc)){ex.alerta=true;ex.palpite=mb.v>=0.35?mb.nome:'';}
+      else if(cd!=='10101012')aprendeExame(cd,ex.desc);
+    }
     exames.push(ex);
   }
   if(!exames.length&&iEx<linhas.length){
@@ -825,6 +867,7 @@ function narracaoSIASS(g){
   if(n){
     f.push(`Os exames que ${ela.toLowerCase()} fez: ${n===1?'um exame':n+' exames'}.`);
     g.exames.forEach(e=>{
+      if(e.alerta&&e.cod){f.push(`Atenção: exame código ${pares(e.cod)}, não consegui ler o nome direito${e.palpite?', parece ser '+minusc(e.palpite):''}. Confira na guia.`);return}
       if(e.alerta){f.push(`Atenção: tem exame que eu não consegui ler direito${e.desc?', parece ser '+minusc(e.desc):''}. Confira na guia.`);return}
       f.push(`${minusc(e.desc).replace(/^./,x=>x.toUpperCase())}${e.cod?', código '+pares(e.cod):''}.`)});
   } else f.push('Não achei exames na guia.');
