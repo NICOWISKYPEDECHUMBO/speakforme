@@ -78,7 +78,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,[contenteditable]:
 .solta button{border:none;background:var(--petroleo);color:#fff;border-radius:8px;padding:9px 16px;font-weight:700;margin-bottom:6px}
 .fila{margin:0 20px 8px;font-size:.88rem;color:var(--petroleo)}
 .lista{flex:1;overflow-y:auto;padding:0 20px 20px;display:flex;flex-direction:column;gap:8px}
-.guia{background:var(--papel);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+.guia{flex-shrink:0;background:var(--papel);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
 .guia.atual{border-color:var(--sinal);box-shadow:0 0 0 2px var(--sinal)}
 .cab{display:flex;align-items:center;gap:10px;padding:10px 12px}
 .cab .quem{flex:1;min-width:0}
@@ -87,6 +87,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,[contenteditable]:
 .ico{border:1px solid var(--linha);background:#f6f9fa;border-radius:8px;width:34px;height:34px;display:grid;place-items:center;color:var(--petroleo)}
 .ico:hover{background:#e3ecef}
 .ico svg{width:17px;height:17px}
+.barraSel{margin:0 20px 10px;display:flex;align-items:center;gap:8px;background:#fff6dc;border:2px solid var(--sinal);border-radius:10px;padding:8px 10px;font-size:.92rem}
+.barraSel[hidden]{display:none}
+.barraSel span{flex:1}
+.selecionando .guia{cursor:pointer}
+.selecionando .guia .setas,.selecionando .guia .ico,.selecionando .guia .pega{display:none}
+.selecionando .guia.sel{border-color:var(--sinal);background:#fffaea}
+.selecionando .num{background:#c9d4d8;color:var(--tinta)}
+.selecionando .guia.sel .num{background:var(--sinal);color:var(--petroleo2);width:30px;height:30px;font-size:1rem}
 .pega{cursor:grab;color:#9aabb1;font-size:1.2rem;user-select:none;padding:0 2px}
 .num{min-width:22px;height:22px;border-radius:50%;background:var(--petroleo);color:#fff;font-size:.78rem;display:grid;place-items:center;font-weight:700}
 .setas{display:flex;flex-direction:column;gap:2px}
@@ -130,7 +138,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
   <section class="conversa">
     <div class="topo">
       <span class="lampada" id="lamp"></span>
-      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v12</small>
+      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v14</small>
       <span class="estado" id="estado">parado</span>
       <button id="btnParar" title="Parar de falar">Calar</button>
       <button id="btnAjustes">Ajustes</button>
@@ -158,6 +166,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
   <section class="guias">
     <header>
       <h2>Guias</h2><span class="contagem" id="contagem">nenhuma</span>
+      <button class="lnk" id="selOrdem" title="Clique nas guias na ordem que quiser">Ordenar 1, 2, 3…</button>
       <button class="lnk" id="az" title="Ordenar por nome">A→Z</button>
       <button class="lnk" id="narrarTodas">Narrar todas</button>
       <button class="lnk perigo" id="limpar">Apagar todas</button>
@@ -168,6 +177,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
       <input type="file" id="arq" accept=".pdf,image/*" multiple hidden>
     </div>
     <div class="fila" id="fila"></div>
+    <div class="barraSel" id="barraSel" hidden><span id="selInfo">Toque nas guias na ordem que você quer (1, 2, 3…)</span><button class="btn sec" id="selCancela">Cancelar</button><button class="btn" id="selOk">OK</button></div>
     <div class="lista" id="lista"></div>
   </section>
 </div>
@@ -224,6 +234,7 @@ const CAMPOS=[
  {k:'nascimento',rot:'data de nascimento',lab:['data de nascimento','data nascimento','dt nascimento','dt nasc','data nasc','nascimento','nasc'],dois:['nasc'],re:/\b(nasc|aniversario)/},
  {k:'idade',rot:'idade',lab:['idade'],re:/\b(idade|quantos anos)\b/},
  {k:'sexo',rot:'sexo',lab:['sexo','genero'],re:/\b(sexo|genero)\b/},
+ {k:'dataArquivo',rot:'data do arquivo',lab:['data do arquivo'],re:/\b(data do arquivo|dia do arquivo|arquivo)\b/},
  {k:'periodo',rot:'período dos exames',lab:['periodo de realizacao dos exames','periodo de realizacao'],re:/\b(periodo|prazo|validade|ate quando)\b/},
  {k:'uorgsup',rot:'Uorg superior',lab:['uorg superior'],re:/\b(uorg superior|superior)\b/},
  {k:'codigo',rot:'código de autenticidade',lab:['codigo de autenticidade'],re:/\b(autenticidade|codigo da guia|codigo de autenticidade)\b/},
@@ -416,10 +427,17 @@ function extrairSIASS(linhas,arquivo){
   }
   if(exames.length)ordem.push('exames');
   if(c.codigo)ordem.push('codigo');
+  if(c.nome&&(/data de nasc|nascimento|\bsexo\b|\bcpf\b|\brg\b|\d/.test(norm(c.nome))||norm(c.nome).replace(/[^a-z]/g,'').length<6)){const ord=ordem.indexOf('nome');if(ord>=0)ordem.splice(ord,1);delete c.nome}
   if(!c.nome){c.nome=nomeDoArquivo(arquivo);ordem.splice(ordem.indexOf('cidade')+1||ordem.length,0,'nome')}
   return {campos:c,nomeArq:nomeDoArquivo(arquivo),exames,ordem,tipo:'siass'};
 }
+function dataDoArquivo(n){const m=String(n).match(/(?:^|\D)(\d{1,2})[_.\-\/ ](\d{1,2})[_.\-\/ ](\d{4})(?:\D|$)/);return m&&+m[2]>=1&&+m[2]<=12?`${m[1].padStart(2,'0')}/${m[2].padStart(2,'0')}/${m[3]}`:''}
 function extrair(texto,arquivo){
+  const r=extrair0(texto,arquivo);const da=dataDoArquivo(arquivo);
+  if(da){r.campos.dataArquivo=da;r.ordem=['dataArquivo'].concat((r.ordem||[]).filter(k=>k!=='dataArquivo'))}
+  return r;
+}
+function extrair0(texto,arquivo){
   {const nt=normC(texto);if(/siass|subsistema|uorg|requisitad|dados do serv|orgao respons/.test(nt))return extrairSIASS(texto.split(/\r?\n/).filter(l=>l.trim()),arquivo)}
   const linhas=texto.split(/\r?\n/).map(l=>l.replace(/\t/g,'    ')).filter(l=>l.trim());
   const campos={},pos={};
@@ -644,7 +662,7 @@ function falaValor(k,v){
   if(k==='codigo') return v;
   if(k==='periodo') return v.replace(DATA_RE,d=>dataFalada(d));
   if(['cpf','rg','cep','guia','matricula','ddd'].includes(k)) return digitosFalados(v);
-  if(['nascimento','data'].includes(k)) return dataFalada(v);
+  if(['nascimento','data','dataArquivo'].includes(k)) return dataFalada(v);
   if(k==='sexo'){const n=norm(v);if(/^f/.test(n))return 'feminino';if(/^m/.test(n))return 'masculino'}
   if(k==='peso'&&/^\d+([.,]\d+)?$/.test(v.trim())) return v.trim()+' quilos';
   if(k==='medicamentos'||k==='alergias') return eLista(v.split(/\s*[,;]\s*|\s+e\s+/).filter(Boolean));
@@ -680,6 +698,7 @@ const FRASE={
   endereco:(g,v)=>g.tipo==='siass'?`O endereço do órgão é ${v}.`:`${quemFala(g)} mora em ${v}.`,
   sexo:(g,v)=>`Na guia está ${v}.`,
   data:(g,v)=>`A data da guia é ${v}.`,
+  dataArquivo:(g,v)=>`O arquivo ${de(g)} ${apelido(g)} é de ${v}.`,
   diagnostico:(g,v)=>`O diagnóstico é ${v}.`,
 };
 function narracaoPDF(g){
@@ -699,7 +718,8 @@ function narracaoPDF(g){
 }
 function narracaoSIASS(g){
   const c=g.campos,ela=art(g)==='a'?'Ela':'Ele',f=[];
-  f.push(`Essa é a guia ${de(g)} ${tit(nomeG(g))}.`);
+  const da=c.dataArquivo||dataDoArquivo(g.arquivo);
+  f.push(da?`Arquivo de ${dataFalada(da)}, guia ${de(g)} ${tit(nomeG(g))}.`:`Essa é a guia ${de(g)} ${tit(nomeG(g))}.`);
   if(c.nascimento&&c.cpf) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)} e tem o CPF ${digitosFalados(c.cpf)}.`);
   else if(c.nascimento) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)}.`);
   else if(c.cpf) f.push(`${ela} tem o CPF ${digitosFalados(c.cpf)}.`);
@@ -833,10 +853,10 @@ function render(){
   $('#contagem').textContent=GUIAS.length?`${GUIAS.length} ${GUIAS.length===1?'carregada':'carregadas'}`:'nenhuma';
   $('#lista').innerHTML=GUIAS.map(g=>{
     const c=g.campos;
-    const sub=[c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
+    const sub=[c.dataArquivo||dataDoArquivo(g.arquivo),c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
     const rows=CAMPOS.map(cp=>`<tr><td>${esc(cp.rot)}</td><td contenteditable data-k="${cp.k}">${esc(c[cp.k]||'')}</td></tr>`).join('');
-    return `<article class="guia" data-id="${g.id}">
-      <div class="cab"><span class="pega" title="Arraste pra mudar a ordem">⠿</span><span class="num">${GUIAS.indexOf(g)+1}</span><div class="quem"><div class="nome">${esc(nomeG(g))}</div><div class="sub">${esc(sub)}</div></div>
+    return `<article class="guia${SEL&&SEL.includes(g.id)?' sel':''}" data-id="${g.id}">
+      <div class="cab"><span class="pega" title="Arraste pra mudar a ordem">⠿</span><span class="num">${SEL?(SEL.includes(g.id)?SEL.indexOf(g.id)+1:'·'):GUIAS.indexOf(g)+1}</span><div class="quem"><div class="nome">${esc(nomeG(g))}</div><div class="sub">${esc(sub)}</div></div>
       <span class="setas"><button class="ico mini" data-a="subir" title="Subir na lista">${ICO.cima}</button><button class="ico mini" data-a="descer" title="Descer na lista">${ICO.baixo}</button></span>
       <button class="ico" data-a="narrar" title="Narrar esta guia">${ICO.play}</button>
       <button class="ico" data-a="abrir" title="Ver e corrigir dados">${ICO.abrir}</button>
@@ -848,6 +868,14 @@ function render(){
   marcarAtual();
 }
 function marcarAtual(){document.querySelectorAll('.guia').forEach(el=>el.classList.toggle('atual',!!CTX&&el.dataset.id===CTX.id))}
+let SEL=null;
+function modoSel(on){SEL=on?[]:null;$('#barraSel').hidden=!on;$('#lista').classList.toggle('selecionando',on);atualizaSel();render()}
+function atualizaSel(){if(SEL)$('#selInfo').textContent=SEL.length?`${SEL.length} escolhida${SEL.length>1?'s':''} — continue tocando ou aperte OK`:'Toque nas guias na ordem que você quer (1, 2, 3…)'}
+$('#lista').addEventListener('click',e=>{
+  if(!SEL)return; const a=e.target.closest('.guia'); if(!a)return; e.stopImmediatePropagation(); e.preventDefault();
+  const id=a.dataset.id,i=SEL.indexOf(id); if(i>=0)SEL.splice(i,1);else SEL.push(id);
+  atualizaSel(); render();
+},true);
 function salvarOrdem(){GUIAS.forEach((g,i)=>{if(g.pos!==i){g.pos=i;DB.salvar(g)}})}
 function mover(g,para){const i=GUIAS.indexOf(g);if(para<0||para>=GUIAS.length||para===i)return;GUIAS.splice(i,1);GUIAS.splice(para,0,g);salvarOrdem();render();
   const el=document.querySelector(`.guia[data-id="${g.id}"]`);if(el)el.scrollIntoView({block:'nearest'})}
@@ -878,6 +906,9 @@ $('#lista').addEventListener('focusout',e=>{
 $('#lista').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('td[contenteditable]')){e.preventDefault();e.target.blur()}});
 $('#limpar').onclick=()=>{if(GUIAS.length&&confirm('Apagar TODAS as guias carregadas?')){GUIAS=[];CTX=null;DB.limpar();render()}};
 $('#narrarTodas').onclick=narrarTodas;
+$('#selOrdem').onclick=()=>{if(GUIAS.length>1)modoSel(!SEL)};
+$('#selCancela').onclick=()=>modoSel(false);
+$('#selOk').onclick=()=>{if(SEL&&SEL.length){const esc=SEL.map(id=>GUIAS.find(g=>g.id===id)).filter(Boolean);GUIAS=esc.concat(GUIAS.filter(g=>!SEL.includes(g.id)));salvarOrdem()}modoSel(false)};
 $('#az').onclick=()=>{if(GUIAS.length>1&&confirm('Colocar as guias em ordem alfabética? A ordem que você montou será trocada.')){GUIAS.sort((a,b)=>nomeG(a).localeCompare(nomeG(b),'pt'));salvarOrdem();render()}};
 
 /* ================== subir arquivos ================== */
