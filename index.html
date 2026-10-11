@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bot das Guias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --fundo:#e6ecee; --papel:#fff; --tinta:#14232b; --suave:#5b6d75; --linha:#c9d4d8;
+  --petroleo:#1f4e5f; --petroleo2:#173b48; --sinal:#f2b134; --rec:#d8473b; --ok:#2f8a5b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;background:var(--fundo);color:var(--tinta);font-size:16px;line-height:1.45}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,[contenteditable]:focus-visible{outline:3px solid var(--sinal);outline-offset:2px}
+.app{display:grid;grid-template-columns:minmax(340px,1fr) minmax(360px,460px);height:100vh}
+@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}}
+
+/* ---- lado da conversa ---- */
+.conversa{background:var(--petroleo);color:#eaf2f4;display:flex;flex-direction:column;min-height:100vh}
+.topo{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid #2c6273}
+.topo h1{font-size:1.35rem;margin:0;font-weight:700;letter-spacing:.01em}
+.lampada{width:12px;height:12px;border-radius:50%;background:#7f9aa3}
+.lampada.on{background:var(--rec);box-shadow:0 0 0 4px rgba(216,71,59,.25)}
+.lampada.fala{background:var(--sinal);box-shadow:0 0 0 4px rgba(242,177,52,.25)}
+.topo .estado{font-size:.9rem;color:#b9cdd3;margin-right:auto}
+.topo button{background:transparent;border:1px solid #4a7c8c;color:#eaf2f4;border-radius:8px;padding:6px 12px}
+.topo button:hover{background:#2a6274}
+
+.palco{display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 20px 18px}
+.mic{position:relative;width:148px;height:148px;border-radius:50%;border:none;background:var(--sinal);color:var(--petroleo2);
+  box-shadow:inset 0 -8px 0 rgba(0,0,0,.18),0 10px 24px rgba(0,0,0,.25);display:grid;place-items:center;transition:transform .12s}
+.mic:active{transform:scale(.97)}
+.mic svg{width:58px;height:58px}
+.mic.on{background:var(--rec);color:#fff}
+.mic.on::before,.mic.on::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px solid rgba(216,71,59,.55);animation:onda 1.6s ease-out infinite}
+.mic.on::after{animation-delay:.8s}
+@keyframes onda{from{transform:scale(.92);opacity:1}to{transform:scale(1.3);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mic.on::before,.mic.on::after{animation:none;opacity:.6}}
+.pare{border:none;border-radius:999px;background:var(--rec);color:#fff;font-weight:700;font-size:1.15rem;padding:12px 28px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.controles{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.controles[hidden]{display:none}
+.ctl{border:2px solid #9fc3cc;border-radius:999px;background:transparent;color:#fff;font-weight:700;font-size:1.05rem;padding:10px 20px}
+.ctl:hover{background:#2a6274}
+.pare:hover{filter:brightness(1.08)}
+.dica{font-size:.95rem;color:#c5d7dc;text-align:center;max-width:42ch}
+.parcial{min-height:1.5em;font-style:italic;color:#fff;text-align:center;max-width:52ch}
+.chave{display:flex;align-items:center;gap:10px;background:#245868;border-radius:999px;padding:6px 14px 6px 6px;font-size:.92rem}
+.chave input{appearance:none;width:42px;height:24px;border-radius:12px;background:#0f2f3a;position:relative;margin:0;cursor:pointer}
+.chave input::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#9fb5bc;transition:left .15s}
+.chave input:checked{background:var(--ok)}
+.chave input:checked::after{left:21px;background:#fff}
+
+.log{flex:1;overflow-y:auto;padding:8px 22px 14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:78%;padding:10px 14px;border-radius:14px;white-space:pre-wrap}
+.msg.eu{align-self:flex-end;background:#e9f0f2;color:var(--tinta);border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--petroleo2);border:1px solid #2f6677;border-bottom-left-radius:4px}
+.msg.bot b{color:var(--sinal);font-weight:700}
+.vazio-log{color:#9cb6bd;text-align:center;margin:auto;max-width:40ch;font-size:.95rem}
+.digitar{display:flex;gap:8px;padding:12px 22px 18px;border-top:1px solid #2c6273}
+.digitar input{flex:1;border:none;border-radius:10px;padding:11px 14px;font:inherit;background:#f4f8f9;color:var(--tinta)}
+.digitar button{border:none;border-radius:10px;padding:0 16px;background:var(--sinal);color:var(--petroleo2);font-weight:700}
+
+/* ---- lado das guias ---- */
+.guias{background:var(--fundo);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+@media (max-width:900px){.guias{height:auto}}
+.guias header{padding:16px 20px 10px;display:flex;align-items:baseline;gap:10px}
+.guias h2{margin:0;font-size:1.15rem}
+.contagem{color:var(--suave);font-size:.92rem;margin-right:auto}
+.lnk{background:none;border:none;color:var(--petroleo);text-decoration:underline;padding:2px 4px;font-size:.92rem}
+.lnk.perigo{color:var(--rec)}
+.solta{margin:0 20px 12px;border:2px dashed #93a9b1;border-radius:12px;padding:18px;text-align:center;background:#f3f7f8;color:var(--suave)}
+.solta.sobre{border-color:var(--petroleo);background:#dfecef}
+.solta button{border:none;background:var(--petroleo);color:#fff;border-radius:8px;padding:9px 16px;font-weight:700;margin-bottom:6px}
+.fila{margin:0 20px 8px;font-size:.88rem;color:var(--petroleo)}
+.lista{flex:1;overflow-y:auto;padding:0 20px 20px;display:flex;flex-direction:column;gap:8px}
+.guia{background:var(--papel);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+.guia.atual{border-color:var(--sinal);box-shadow:0 0 0 2px var(--sinal)}
+.cab{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.cab .quem{flex:1;min-width:0}
+.cab .nome{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cab .sub{font-size:.84rem;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico{border:1px solid var(--linha);background:#f6f9fa;border-radius:8px;width:34px;height:34px;display:grid;place-items:center;color:var(--petroleo)}
+.ico:hover{background:#e3ecef}
+.ico svg{width:17px;height:17px}
+.pega{cursor:grab;color:#9aabb1;font-size:1.2rem;user-select:none;padding:0 2px}
+.num{min-width:22px;height:22px;border-radius:50%;background:var(--petroleo);color:#fff;font-size:.78rem;display:grid;place-items:center;font-weight:700}
+.setas{display:flex;flex-direction:column;gap:2px}
+.ico.mini{width:28px;height:16px;border-radius:5px}
+.ico.mini svg{width:13px;height:13px}
+.guia.arrastando{opacity:.4}
+.guia.alvo-cima{box-shadow:0 -3px 0 var(--sinal)}
+.guia.alvo-baixo{box-shadow:0 3px 0 var(--sinal)}
+.corpo{display:none;border-top:1px solid var(--linha);padding:10px 12px 12px;font-size:.92rem}
+.guia.aberta .corpo{display:block}
+table{width:100%;border-collapse:collapse}
+td{border-bottom:1px solid #e6edf0;padding:5px 6px;vertical-align:top}
+td:first-child{width:36%;color:var(--suave)}
+td[contenteditable]{background:#fbfdfd}
+td[contenteditable]:empty::before{content:"—";color:#b5c2c7}
+.exs{margin:10px 0 0;padding-left:20px}
+.exs li{margin:2px 0}
+.cod{color:var(--suave);font-variant-numeric:tabular-nums}
+.bruto{white-space:pre-wrap;background:#f3f6f7;border-radius:8px;padding:10px;max-height:260px;overflow:auto;font-size:.82rem;margin-top:8px;display:none}
+.bruto.ver{display:block}
+.rodape-corpo{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+
+/* ---- ajustes ---- */
+dialog{border:none;border-radius:14px;padding:0;width:min(520px,94vw);color:var(--tinta)}
+dialog::backdrop{background:rgba(10,30,38,.55)}
+.dlg{padding:20px 22px}
+.dlg h3{margin:0 0 12px}
+.dlg label{display:block;margin:10px 0 4px;font-weight:700;font-size:.92rem}
+.dlg select,.dlg input[type=range]{width:100%}
+.dlg select{padding:8px;border-radius:8px;border:1px solid var(--linha);font:inherit}
+.marcas{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:4px}
+.marcas label{font-weight:400;margin:0;display:flex;gap:6px;align-items:center}
+.dlg .acoes{display:flex;justify-content:space-between;gap:8px;margin-top:18px}
+.btn{border:none;border-radius:8px;padding:9px 16px;background:var(--petroleo);color:#fff;font-weight:700}
+.btn.sec{background:#e3eaec;color:var(--tinta)}
+.btn.perigo{background:var(--rec)}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="conversa">
+    <div class="topo">
+      <span class="lampada" id="lamp"></span>
+      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v12</small>
+      <span class="estado" id="estado">parado</span>
+      <button id="btnParar" title="Parar de falar">Calar</button>
+      <button id="btnAjustes">Ajustes</button>
+    </div>
+    <div class="palco">
+      <button class="mic" id="mic" aria-label="Falar com o bot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <div class="controles" id="controles" hidden>
+        <button class="ctl" id="voltar" title="Guia anterior (seta ←)">⏮ Voltar</button>
+        <button class="pare" id="pare">■ Parar</button>
+        <button class="ctl" id="proximo" title="Próxima guia (seta →)">Próximo ⏭</button>
+      </div>
+      <div class="dica" id="dica">Toque no microfone (ou aperte F2) e pergunte. Ex.: "qual o telefone da Maria?"</div>
+      <label class="chave"><input type="checkbox" id="continuo"> Sempre ouvindo — é só chamar "bot"</label>
+      <div class="parcial" id="parcial"></div>
+    </div>
+    <div class="log" id="log"><div class="vazio-log" id="vazioLog">Suba as guias em PDF do lado direito e pergunte qualquer coisa: telefone, CPF, unidade, exames, quantos exames, remédios, peso…</div></div>
+    <form class="digitar" id="formTxt">
+      <input id="txt" placeholder="Ou digite a pergunta aqui…" autocomplete="off">
+      <button>Perguntar</button>
+    </form>
+  </section>
+
+  <section class="guias">
+    <header>
+      <h2>Guias</h2><span class="contagem" id="contagem">nenhuma</span>
+      <button class="lnk" id="az" title="Ordenar por nome">A→Z</button>
+      <button class="lnk" id="narrarTodas">Narrar todas</button>
+      <button class="lnk perigo" id="limpar">Apagar todas</button>
+    </header>
+    <div class="solta" id="solta">
+      <button id="btnSubir">Subir guias</button>
+      <div>PDF ou foto — pode arrastar vários de uma vez</div>
+      <input type="file" id="arq" accept=".pdf,image/*" multiple hidden>
+    </div>
+    <div class="fila" id="fila"></div>
+    <div class="lista" id="lista"></div>
+  </section>
+</div>
+
+<dialog id="dlg"><div class="dlg">
+  <h3>Ajustes</h3>
+  <label for="voz">Voz</label>
+  <select id="voz"></select>
+  <label for="vel">Velocidade da fala <span id="velTxt"></span></label>
+  <input type="range" id="vel" min="0.7" max="1.6" step="0.05">
+  <label class="chave" style="background:#e3eaec;color:var(--tinta);margin-top:12px;font-weight:400"><input type="checkbox" id="momento"> Dizer "só um momento" antes de responder</label>
+  <label class="chave" style="background:#e3eaec;color:var(--tinta);margin-top:12px;font-weight:400"><input type="checkbox" id="ocrSempre"> Ler a guia pela imagem (OCR) — melhor pra guia escaneada</label>
+  <label for="modo">Jeito da narração</label>
+  <select id="modo"><option value="pdf">Na ordem do PDF (campo por campo)</option><option value="resumo">Resumo falado ("Essa é a guia de…")</option></select>
+  <label>O que entra na narração da guia</label>
+  <div class="marcas" id="marcas"></div>
+  <div class="acoes">
+    <span></span>
+    <span><button class="btn sec" id="testarVoz" type="button">Testar voz</button>
+    <button class="btn" id="fecharDlg" type="button">Pronto</button></span>
+  </div>
+</div></dialog>
+
+<script>
+/* ================== utilidades ================== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const normC=s=>[...String(s||'')].map(c=>{const n=c.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n.length===1?n:c.toLowerCase()}).join('');
+const norm=s=>normC(s).replace(/\s+/g,' ').trim();
+const LS={get(k,d){try{const v=localStorage.getItem('botguias.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('botguias.'+k,JSON.stringify(v))}catch(e){}}};
+
+/* ================== banco local (IndexedDB) ================== */
+const DB={db:null,
+  abrir(){return new Promise((ok,er)=>{const r=indexedDB.open('botguias',1);r.onupgradeneeded=()=>r.result.createObjectStore('guias',{keyPath:'id'});r.onsuccess=()=>{this.db=r.result;ok()};r.onerror=()=>er(r.error)})},
+  tx(m){return this.db.transaction('guias',m).objectStore('guias')},
+  todas(){return new Promise(ok=>{if(!this.db)return ok([]);const r=this.tx('readonly').getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>ok([])})},
+  salvar(g){if(this.db)this.tx('readwrite').put(g)},
+  apagar(id){if(this.db)this.tx('readwrite').delete(id)},
+  limpar(){if(this.db)this.tx('readwrite').clear()}
+};
+
+/* ================== campos que o bot entende ================== */
+// k: chave · rot: como fala · lab: rótulos no PDF · dois: rótulo só vale com ":" · re: palavras na pergunta
+const CAMPOS=[
+ {k:'nome',rot:'nome',lab:['nome do servidor','nome do paciente','nome do beneficiario','nome do funcionario','nome do segurado','nome do trabalhador','nome completo','nome social','paciente','beneficiario','servidor','funcionario','trabalhador','nome'],re:/\b(nome completo|como (ela|ele) se chama)\b/},
+ {k:'mae',rot:'nome da mãe',lab:['nome da mae','mae'],re:/\bmae\b/},
+ {k:'pai',rot:'nome do pai',lab:['nome do pai'],re:/\bpai\b/},
+ {k:'telefone',rot:'telefone',lab:['telefone celular','telefone de contato','telefone','celular','fone','tel','contato'],dois:['tel','fone','contato'],re:/\b(telefone|celular|fone|contato|ligar|zap|whats)/},
+ {k:'ddd',rot:'DDD',lab:['ddd'],dois:['ddd'],re:/\bddd\b/},
+ {k:'email',rot:'e-mail',lab:['e-mail','email'],re:/\b(e ?-?mail)\b/},
+ {k:'cpf',rot:'CPF',lab:['cpf'],re:/\bcpf\b/},
+ {k:'rg',rot:'RG',lab:['carteira de identidade','identidade','rg'],dois:['rg'],re:/\b(rg|identidade)\b/},
+ {k:'matricula',rot:'matrícula',lab:['matricula siape','matricula','siape'],re:/\b(matricula|siape)\b/},
+ {k:'nascimento',rot:'data de nascimento',lab:['data de nascimento','data nascimento','dt nascimento','dt nasc','data nasc','nascimento','nasc'],dois:['nasc'],re:/\b(nasc|aniversario)/},
+ {k:'idade',rot:'idade',lab:['idade'],re:/\b(idade|quantos anos)\b/},
+ {k:'sexo',rot:'sexo',lab:['sexo','genero'],re:/\b(sexo|genero)\b/},
+ {k:'periodo',rot:'período dos exames',lab:['periodo de realizacao dos exames','periodo de realizacao'],re:/\b(periodo|prazo|validade|ate quando)\b/},
+ {k:'uorgsup',rot:'Uorg superior',lab:['uorg superior'],re:/\b(uorg superior|superior)\b/},
+ {k:'codigo',rot:'código de autenticidade',lab:['codigo de autenticidade'],re:/\b(autenticidade|codigo da guia|codigo de autenticidade)\b/},
+ {k:'orgao',rot:'órgão',lab:['orgao','empresa','secretaria','instituicao','ministerio'],re:/\b(orgao|empresa|secretaria|ministerio|instituicao)\b/},
+ {k:'unidade',rot:'lotação',lab:['uorg lotacao','unidade de lotacao','unidade de trabalho','unidade','lotacao','local de trabalho','setor','estabelecimento'],re:/\b(unidade|trabalha|lotad|lotacao|setor|onde (ela|ele) (fica|esta))/},
+ {k:'cargo',rot:'cargo',lab:['cargo','funcao','ocupacao','profissao','cbo'],re:/\b(cargo|funcao|profissao|ocupacao|faz o que)\b/},
+ {k:'endereco',rot:'endereço',lab:['endereco','logradouro'],re:/\b(endereco|mora|rua|logradouro)\b/},
+ {k:'bairro',rot:'bairro',lab:['bairro'],re:/\bbairro\b/},
+ {k:'cidade',rot:'cidade',lab:['cidade','municipio'],re:/\b(cidade|municipio)\b/},
+ {k:'uf',rot:'estado',lab:['uf'],dois:['uf'],re:/\b(uf|estado)\b/},
+ {k:'cep',rot:'CEP',lab:['cep'],re:/\bcep\b/},
+ {k:'guia',rot:'número da guia',lab:['guia siass','numero da guia','n da guia','no da guia','guia no','guia n','guia'],dois:['guia'],re:/\b(numero da guia|guia numero|qual (e )?a guia|n(u|o) ?mero d[ao] guia)\b/},
+ {k:'tipoexame',rot:'tipo de exame',lab:['tipo de exame','natureza do exame','tipo do exame','finalidade'],re:/\b(tipo de exame|admissional|periodico|demissional|finalidade)\b/},
+ {k:'data',rot:'data',lab:['data da solicitacao','data de emissao','data do atendimento','data da guia','data'],dois:['data'],re:/\b(data|quando|dia)\b/},
+ {k:'medico',rot:'médico',lab:['medico solicitante','profissional solicitante','solicitante','medico','crm'],dois:['crm'],re:/\b(medico|solicitante|crm|doutor)\b/},
+ {k:'clinica',rot:'clínica',lab:['clinica','prestador','laboratorio','local do exame'],re:/\b(clinica|prestador|laboratorio|onde (vai|fez|faz))\b/},
+ {k:'convenio',rot:'convênio',lab:['convenio','operadora','plano'],re:/\b(convenio|operadora|plano)\b/},
+ {k:'peso',rot:'peso',lab:['peso'],re:/\b(peso|pesa|quilos|kg)\b/},
+ {k:'altura',rot:'altura',lab:['altura','estatura'],re:/\b(altura|estatura|mede)\b/},
+ {k:'pressao',rot:'pressão',lab:['pressao arterial','pressao','pa'],dois:['pa'],re:/\b(pressao)\b/},
+ {k:'sinais',rot:'sinais vitais',lab:['sinais vitais'],re:/\bsinais\b/},
+ {k:'medicamentos',rot:'remédios',lab:['medicamentos em uso','medicacoes em uso','uso de medicamentos','medicamentos','medicacoes','medicacao','remedios'],re:/\b(remedio|medicament|medicac|toma o que|que (ela|ele) toma)/},
+ {k:'alergias',rot:'alergias',lab:['alergias','alergia'],re:/\b(alergi)/},
+ {k:'diagnostico',rot:'diagnóstico',lab:['hipotese diagnostica','indicacao clinica','diagnostico','cid'],dois:['cid'],re:/\b(diagnostico|cid|doenca|indicacao)\b/},
+ {k:'obs',rot:'observações',lab:['observacoes','observacao','obs'],dois:['obs'],re:/\b(observa|obs)\b/},
+];
+const CAMPO=Object.fromEntries(CAMPOS.map(c=>[c.k,c]));
+const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const LABS=[];
+CAMPOS.forEach(c=>c.lab.forEach(l=>{
+  const corpo=l.split(' ').map(w=>reEsc(w)+'\\.?').join('[\\s.]*');
+  LABS.push({k:c.k,l,dois:(c.dois||[]).includes(l),re:new RegExp('(^|[^a-z0-9])('+corpo+')(?![a-z])(\\s*(n[o°º.]*|numero|nr\\.?)(?![a-z]))?\\s*([:\\-–]?)','g')});
+}));
+
+/* ================== leitura do PDF ================== */
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let OCR=null;
+async function ocrWorker(){
+  if(OCR) return OCR;
+  if(!window.Tesseract) await new Promise((ok,er)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>er(new Error('sem internet pro OCR'));document.head.appendChild(s)});
+  OCR=await Tesseract.createWorker('por');
+  return OCR;
+}
+function linhasDoTSV(tsv){
+  return linhasDePalavras(String(tsv||'').split('\n').slice(1).map(l=>l.split('\t')).filter(c=>c[0]==='5'&&c[11]&&c[11].trim())
+    .map(c=>({x:+c[6],y:+c[7],w:+c[8],h:+c[9],t:c[11].trim()})));
+}
+function palavrasDosBlocos(data){
+  let ws=data.words;
+  if(!ws||!ws.length){ws=[];(data.blocks||[]).forEach(b=>(b.paragraphs||[]).forEach(p=>(p.lines||[]).forEach(l=>(l.words||[]).forEach(w=>ws.push(w)))))}
+  return ws.filter(w=>w.text&&w.text.trim()&&w.bbox).map(w=>({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim()}));
+}
+function linhasDePalavras(ws){
+  if(!ws.length) return '';
+  const hs=ws.map(w=>w.h).sort((a,b)=>a-b), hm=hs[hs.length>>1]||20;
+  ws.sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
+  const rows=[];
+  ws.forEach(w=>{const cy=w.y+w.h/2;let r=rows.find(r=>Math.abs(r.cy-cy)<hm*0.6);if(!r){r={cy,ws:[]};rows.push(r)}r.ws.push(w);r.cy=(r.cy*(r.ws.length-1)+cy)/r.ws.length});
+  rows.sort((a,b)=>a.cy-b.cy);
+  return rows.map(r=>{r.ws.sort((a,b)=>a.x-b.x);let s='',fim=null;r.ws.forEach(w=>{if(fim!==null)s+=(w.x-fim>hm*1.6)?'    ':' ';s+=w.t;fim=w.x+w.w});return s}).join('\n');
+}
+async function ocr(img){
+  const w=await ocrWorker(); let data;
+  try{({data}=await w.recognize(img,{},{text:true,tsv:true,blocks:true}))}catch(e){({data}=await w.recognize(img))}
+  return linhasDoTSV(data.tsv)||linhasDePalavras(palavrasDosBlocos(data))||data.text||'';
+}
+async function textoPagina(page){
+  const tc=await page.getTextContent();
+  const its=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str,x:i.transform[4],y:i.transform[5],w:i.width||0}));
+  const linhas=[];
+  its.forEach(it=>{let L=linhas.find(l=>Math.abs(l.y-it.y)<3);if(!L){L={y:it.y,it:[]};linhas.push(L)}L.it.push(it)});
+  linhas.sort((a,b)=>b.y-a.y);
+  return linhas.map(l=>{l.it.sort((a,b)=>a.x-b.x);let s='',fim=null;l.it.forEach(it=>{if(fim!==null){const gap=it.x-fim;s+=gap>12?'    ':(gap>1.5?' ':'')}s+=it.s;fim=it.x+it.w});return s}).join('\n');
+}
+async function lerArquivo(file,aviso){
+  if(/^image\//.test(file.type)){
+    aviso('lendo foto (OCR)…');
+    return await ocr(file);
+  }
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  let out=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    aviso(`página ${p} de ${pdf.numPages}…`);
+    const page=await pdf.getPage(p);
+    let t=await textoPagina(page);
+    const nt=normC(t);
+    const bons=['nome','cpf','sexo','dados do servidor','requisitad','telefone','orgao','endereco'].filter(w=>nt.includes(w)).length;
+    if(CFG.ocrSempre||t.replace(/\s/g,'').length<40||bons<4){ // escaneado ou texto embutido ruim: OCR
+      aviso(`página ${p} de ${pdf.numPages} — lendo imagem (OCR)…`);
+      const vp=page.getViewport({scale:2.5}); const cv=document.createElement('canvas');
+      cv.width=vp.width; cv.height=vp.height;
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      t=await ocr(cv);
+    }
+    out.push(t);
+  }
+  return out.join('\n');
+}
+
+/* ================== extrair campos ================== */
+function nomeDoArquivo(n){
+  return n.replace(/\.[a-z0-9]+$/i,'').replace(/[A-Za-z]*\d[\w]*/g,' ').replace(/[_]+/g,' ').replace(/\b\d{1,2}[ .\/-]\d{1,2}[ .\/-]\d{2,4}\b/g,' ')
+   .replace(/\bguias?\b/ig,' ').replace(/\d+/g,' ').replace(/[-–]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function limpaValor(v){return (v||'').replace(/^[\s:\-–.|]+/,'').replace(/[\s:\-–|]+$/,'').replace(/\s{2,}/g,' ').trim()}
+const DATA_RE=/\b\d{1,2}\/\d{1,2}\/\s?\d{4}\b/g;
+function cortaRotulos(linha,rots){ // rots: [[chave, regex do rótulo]]
+  const nl=normC(linha), achados=[];
+  rots.forEach(([k,re])=>{const m=new RegExp('(^|[^a-z0-9])('+re+')(?![a-z0-9])').exec(nl);if(m)achados.push({k,ini:m.index+m[1].length,fim:m.index+m[0].length})});
+  achados.sort((a,b)=>a.ini-b.ini);
+  const out={};achados.forEach((a,i)=>{const v=limpaValor(linha.slice(a.fim,i+1<achados.length?achados[i+1].ini:linha.length).replace(/^[!|'‘`]+/,''));if(v)out[a.k]=v});
+  return {out,primeiro:achados.length?achados[0].ini:-1};
+}
+function nomeExame(cod,resto){
+  let [nome,obs]=resto.split(/\s*-?\s*observa\S*\s*:?\s*-?\s*/i);
+  nome=limpaValor((nome||'').replace(/\s{4,}.*$/,''));obs=limpaValor((obs||'').replace(/\s{4,}.*$/,'').replace(/\.\s*$/,''));
+  if((!nome||/^em consultorio/.test(norm(nome)))&&obs) return {cod,desc:obs};
+  if(/^em consultorio/.test(norm(nome))) nome='Consulta em consultório';
+  return {cod,desc:nome||obs||cod};
+}
+function extrairSIASS(linhas,arquivo){
+  const c={},ordem=[];const pos=k=>{if(c[k]&&!ordem.includes(k))ordem.push(k)};
+  const n=linhas.map(normC);
+  let iServ=n.findIndex(l=>/dados do serv|dados do serv\w*/.test(l));
+  if(iServ<0){const nomes=n.map((l,i)=>/^\W*nome\b/.test(l)?i:-1).filter(i=>i>=0);if(nomes.length>1)iServ=nomes[1]-1;else{const sx=n.findIndex(l=>/\bsexo\b|\bcpf\b/.test(l));if(sx>0)iServ=sx-2}}
+  let iEx=n.findIndex(l=>/requisitad/.test(l)); if(iEx<0)iEx=linhas.length;
+  let iOrg=n.findIndex(l=>/orgao respons/.test(l));
+  const iPer=n.findIndex(l=>/periodo|realiza/.test(l));
+  if(iPer>=0&&(iOrg<0||iPer<iOrg))iOrg=iPer+1;
+  if(iOrg<0||(iServ>=0&&iOrg>iServ))iOrg=0;
+  // cabeçalho
+  for(let i=0;i<(iServ>0?iServ:linhas.length);i++){
+    const d=linhas[i].match(DATA_RE)||[];
+    if(/emiss/.test(n[i])&&d[0]){c.data=d[0].replace(/\s/g,'');pos('data')}
+    if(/periodo|realiza/.test(n[i])&&d.length>=2){c.periodo=`${d[0]} a ${d[1]}`.replace(/\/\s/g,'/');pos('periodo')}
+  }
+  // órgão responsável
+  const fila=[];
+  const rotSo=l=>{const t=l.replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();return t==='nome'?'orgao':/^uorg sup\w*$/.test(t)?'uorgsup':/^uorg lot\w*$/.test(t)?'unidade':/^endere\w*$/.test(t)?'endereco':/^munic\w*$/.test(t)?'cidade':null};
+  for(let i=Math.max(iOrg,0);i<(iServ>0?iServ:iEx);i++){
+    const L=linhas[i],l=n[i];
+    if(/orgao respons/.test(l)&&l.replace(/[^a-z]/g,'').length<20) continue;
+    const so=rotSo(l); if(so){fila.push(so);continue}
+    if(fila.length&&!/(^|\s)uf(\s|$)|telefone/.test(l)&&!/^\W*\(?\d{2}\)?\s?\d{4}/.test(L)){const k=fila.shift();if(!c[k]){c[k]=limpaValor(L.replace(/^[!|'‘`]+/,''));pos(k)}continue}
+    if(/^\W*nome\b/.test(l)&&!c.orgao){c.orgao=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[!|'‘`]+/,''));pos('orgao');continue}
+    if(/^\W*uorg\s*sup/.test(l)){c.uorgsup=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('uorgsup');continue}
+    if(/^\W*uorg\s*lot/.test(l)){c.unidade=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('unidade');continue}
+    if(/^\W*endere/.test(l)){c.endereco=limpaValor(L.replace(/^\W*\S+/,''));pos('endereco');continue}
+    if(/(^|\s)uf(\s|$)/.test(l)||/^\W*munic/.test(l)||/telefone/.test(l)){
+      const {out,primeiro}=cortaRotulos(L,[['cidade','munic\\S*'],['uf','uf'],['telefone','telefone']]);
+      if(!out.cidade&&primeiro>0){const v=limpaValor(L.slice(0,primeiro));if(v&&!/^munic/i.test(v))out.cidade=v}
+      if(out.telefone&&!/\d/.test(out.telefone))delete out.telefone;
+      ['cidade','uf','telefone'].forEach(k=>{if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
+    }
+    if(!c.telefone){const m=L.match(/\(?\d{2}\)?\s?\d{4,5}-\d{4}/);if(m){c.telefone=m[0];pos('telefone')}}
+  }
+  // dados do servidor
+  for(let i=iServ+1;iServ>=0&&i<iEx;i++){
+    const L=linhas[i],l=n[i];
+    if(/autentic/.test(l))break;
+    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
+    if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L);pos('nome');delete c._nomeProx;continue}
+    const {out}=cortaRotulos(L,[['sexo','sexo'],['nascimento','data\\s*de\\s*nasc\\S*|nascimento'],['cpf','cpf'],['rg','rg']]);
+    if(out.nascimento){const d=out.nascimento.match(DATA_RE);if(d)out.nascimento=d[0].replace(/\s/g,'')}
+    if(out.cpf)out.cpf=out.cpf.replace(/[^\d.\-]/g,'');
+    if(out.rg)out.rg=out.rg.replace(/[^\dXx.\-]/g,'');
+    ['sexo','nascimento','idade','cpf','rg'].forEach(k=>{if(k==='idade'&&c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
+      if(out[k]&&!c[k]){c[k]=out[k];pos(k)}});
+    if(c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
+  }
+  delete c._nomeProx;
+  const tudo=linhas.join('\n'),serv=linhas.slice(Math.max(iServ,0),iEx).join('\n');
+  if(!c.nascimento){const ds=(serv.match(DATA_RE)||[]).map(d=>d.replace(/\s/g,'')).filter(d=>d!==c.data&&!(c.periodo||'').includes(d));if(ds[0]){c.nascimento=ds[0];pos('nascimento')}}
+  if(!c.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?\d{4,5}-\d{4}\b/);if(m){c.telefone=m[0];pos('telefone')}}
+  if(!c.cidade&&/rio de janeiro/i.test(tudo)){c.cidade='Rio de Janeiro';pos('cidade')}
+  if(c.nome&&/comiss|ministerio|nacional|instituto|universidade|fundacao|secretaria/.test(norm(c.nome))&&!c.orgao){c.orgao=c.nome;delete c.nome}
+  if(!c.cpf){const m=linhas.slice(iServ>0?iServ:0,iEx).join(' ').match(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/);if(m){c.cpf=m[0];pos('cpf')}}
+  const cod=linhas.join(' ').match(/\b[0-9A-FO]{4}(\.[0-9A-FO]{4}){5}\b/);
+  if(cod){c.codigo=cod[0].replace(/O/g,'0');}
+  // exames
+  const exames=[],vistos=new Set();
+  const ini=iEx<linhas.length?iEx+1:Math.max(iServ,0);
+  for(let i=ini;i<linhas.length;i++){
+    if(/\bcpf\b|\brg\b|telefone|uorg/.test(n[i]))continue;
+    const m=linhas[i].match(/(?:^|[^\w])([0-9OlI]{8})\s*[-–]\s*(.*)$/);
+    if(!m)continue;
+    const cd=m[1].replace(/O/g,'0').replace(/[lI]/g,'1');
+    if(vistos.has(cd))continue;vistos.add(cd);
+    exames.push(nomeExame(cd,m[2]));
+  }
+  if(exames.length)ordem.push('exames');
+  if(c.codigo)ordem.push('codigo');
+  if(!c.nome){c.nome=nomeDoArquivo(arquivo);ordem.splice(ordem.indexOf('cidade')+1||ordem.length,0,'nome')}
+  return {campos:c,nomeArq:nomeDoArquivo(arquivo),exames,ordem,tipo:'siass'};
+}
+function extrair(texto,arquivo){
+  {const nt=normC(texto);if(/siass|subsistema|uorg|requisitad|dados do serv|orgao respons/.test(nt))return extrairSIASS(texto.split(/\r?\n/).filter(l=>l.trim()),arquivo)}
+  const linhas=texto.split(/\r?\n/).map(l=>l.replace(/\t/g,'    ')).filter(l=>l.trim());
+  const campos={},pos={};
+  linhas.forEach((linha,i)=>{
+    const nl=normC(linha); let ms=[];
+    LABS.forEach(L=>{L.re.lastIndex=0;let m;while((m=L.re.exec(nl))){
+      const ini=m.index+m[1].length, fimRot=ini+m[2].length+(m[3]||'').length, dps=m.index+m[0].length;
+      const temDois=!!m[5]; const antes=nl.slice(0,ini);
+      const inicioSeg=/^\s*$/.test(antes)||/\s{2,}$/.test(antes)||/[|]\s*$/.test(antes);
+      if(L.dois&&!temDois) continue;
+      if(!temDois&&!inicioSeg) continue;
+      ms.push({k:L.k,ini,fim:dps,tam:m[2].length});
+    }});
+    ms.sort((a,b)=>a.ini-b.ini||b.tam-a.tam);
+    const lim=[];ms.forEach(m=>{if(!lim.some(o=>m.ini<o.fim&&o.ini<m.fim))lim.push(m)});
+    lim.forEach((m,j)=>{
+      if(campos[m.k]) return;
+      let fim=j+1<lim.length?lim[j+1].ini:linha.length;
+      let v=linha.slice(m.fim,fim); const corte=v.search(/\S\s{4,}\S/); if(corte>0) v=v.slice(0,corte+1);
+      v=limpaValor(v);
+      if(!v&&lim.length===1&&linhas[i+1]){const prox=normC(linhas[i+1]);if(!/:\s*$/.test(prox)&&!LABS.some(L=>{L.re.lastIndex=0;const r=L.re.exec(prox);return r&&r.index<3&&r[5]}))v=limpaValor(linhas[i+1].split(/\s{4,}/)[0])}
+      if(v){campos[m.k]=v;pos[m.k]=i}
+    });
+  });
+  const tudo=texto.replace(/\s+/g,' ');
+  if(!campos.cpf){const m=tudo.match(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/);if(m)campos.cpf=m[0]}
+  if(!campos.email){const m=tudo.match(/[\w.+-]+@[\w-]+\.[\w.]+/);if(m)campos.email=m[0]}
+  if(!campos.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?9?\d{4}[-\s]\d{4}\b/);if(m)campos.telefone=m[0]}
+  if(campos.ddd&&campos.telefone&&campos.telefone.replace(/\D/g,'').length<=9) campos.telefone=campos.ddd.replace(/\D/g,'')+' '+campos.telefone;
+  const nomeArq=nomeDoArquivo(arquivo);
+  if(!campos.nome&&nomeArq) campos.nome=nomeArq;
+  if(!campos.idade&&campos.nascimento){const m=campos.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const n=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-n.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120)campos.idade=a+' anos'}}
+  if(campos.idade&&pos.idade==null) pos.idade=(pos.nascimento??pos.nome??0)+0.5;
+  if(campos.nome&&pos.nome==null) pos.nome=-1;
+  const exames=extrairExames(linhas,campos);
+  pos.exames=exames.linha??1e9;
+  const ordem=Object.keys(campos).concat(exames.length?['exames']:[]).sort((a,b)=>(pos[a]??1e9-1)-(pos[b]??1e9-1));
+  return {campos,nomeArq,exames:[...exames],ordem};
+}
+function extrairExames(linhas,campos){
+  const pular=/\b(cpf|rg|identidade|telefone|celular|fone|guia|matricula|siape|cep|crm|cns|cartao|carteira|ans|registro|codigo na operadora)\b/;
+  const valores=Object.values(campos).map(v=>v.replace(/\D/g,'')).filter(v=>v.length>=8);
+  const ex=[],vistos=new Set();
+  linhas.forEach((l,li)=>{
+    const m=l.match(/\b(\d{8})\b|\b(\d{2}\.\d{2}\.\d{2}\.\d{2}-?\d)\b/); if(!m) return;
+    const nl=normC(l); const cod=(m[1]||m[2]);
+    if(pular.test(nl)||valores.some(v=>v.includes(cod.replace(/\D/g,'')))) return;
+    let d=l.replace(m[0],' ').replace(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,' ').replace(/R\$\s*[\d.,]+/g,' ').replace(/^[\s\d.,:;|\-–]+|[\s\d.,:;|\-–]+$/g,'').replace(/\s{2,}/g,' ').trim();
+    if(vistos.has(cod)) return; vistos.add(cod);
+    if(ex.linha==null)ex.linha=li;
+    ex.push({cod,desc:d||cod});
+  });
+  if(ex.length) return ex;
+  const i=linhas.findIndex(l=>/\bexames?\b|\bprocedimentos?\b/.test(normC(l))&&normC(l).length<60);
+  if(i<0) return [];
+  ex.linha=i;
+  for(let j=i+1;j<linhas.length&&ex.length<40;j++){
+    const t=linhas[j].trim(), nt=normC(t);
+    if(/:\s*\S/.test(t)&&LABS.some(L=>{L.re.lastIndex=0;const r=L.re.exec(nt);return r&&r.index<2}))break;
+    if(/^(assinatura|data|local|observa|medico|carimbo)/.test(nt))break;
+    if(t.length>3&&!vistos.has(nt)){vistos.add(nt);ex.push({cod:'',desc:t.replace(/^[\s•\-–*\d.)]+/,'')})}
+  }
+  return ex;
+}
+
+/* ================== estado ================== */
+let GUIAS=[], CTX=null, PEND=null;
+const CFG={voz:LS.get('voz',''),vel:LS.get('vel2',1.1),momento:LS.get('momento',true),
+  modo:LS.get('modo','pdf'),ocrSempre:LS.get('ocrSempre',true),narrar:LS.get('narrar2',['orgao','endereco','cidade','uf','telefone','nome','sexo','nascimento','idade','cpf','rg','cargo','peso','altura','pressao','medicamentos','alergias','diagnostico','exames'])};
+
+/* ================== voz (fala) ================== */
+let VOZES=[], FILA=0;
+function carregarVozes(){
+  const nota=v=>(/BR/i.test(v.lang)?4:0)+(/natural/i.test(v.name)?3:/online/i.test(v.name)?2:/google/i.test(v.name)?1:0);
+  VOZES=speechSynthesis.getVoices().filter(v=>/^pt/i.test(v.lang)).sort((a,b)=>nota(b)-nota(a));
+  const s=$('#voz'); s.innerHTML=VOZES.map(v=>`<option value="${esc(v.name)}">${esc(v.name)} (${v.lang})</option>`).join('')||'<option value="">Nenhuma voz em português instalada</option>';
+  if(CFG.voz&&VOZES.some(v=>v.name===CFG.voz)) s.value=CFG.voz;
+}
+speechSynthesis.onvoiceschanged=carregarVozes; carregarVozes();
+function pedacos(t){
+  const out=[];let atual='';
+  t.split(/(?<=[.!?])\s+/).forEach(f=>{
+    while(f.length>280){let c=f.lastIndexOf(',',280);if(c<80)c=f.lastIndexOf(' ',280);out.push(f.slice(0,c+1));f=f.slice(c+1)}
+    if((atual+' '+f).length>280){if(atual.trim())out.push(atual);atual=f}else atual=(atual?atual+' ':'')+f;
+  });
+  if(atual.trim())out.push(atual);return out;
+}
+function limpaFala(t){
+  return t.replace(/\(([^)]*)\)/g,', $1,').replace(/;/g,',').replace(/\s*,\s*,/g,',').replace(/,\s*\./g,'.')
+   .replace(/(\d)\s?mg\b/gi,'$1 miligramas').replace(/(\d)\s?ml\b/gi,'$1 mililitros').replace(/(\d)\s?kg\b/gi,'$1 quilos')
+   .replace(/([a-zà-ú])\s*\/\s*([a-zà-ú])/gi,'$1 ou $2').replace(/\s+/g,' ').replace(/\s+([,.])/g,'$1').trim();
+}
+const SIGLAS=/^(CPF|CEP|CID|CRM|DDD|SUS|RG|PA|INSS|SIASS|ANS|TUSS|CBO|RX|ECG|EEG|PSA|TSH|HIV|HCV|VDRL|TGO|TGP|GGT|HDL|LDL|RJ|SP|MG|ES|UF|ASO)$/;
+const ACENTO={SAUDE:'SAÚDE',MINISTERIO:'MINISTÉRIO',ORGAO:'ÓRGÃO',SERVICO:'SERVIÇO',SERVICOS:'SERVIÇOS',TECNICO:'TÉCNICO',TECNICA:'TÉCNICA',ORCAMENTO:'ORÇAMENTO',FISICA:'FÍSICA',PUBLICO:'PÚBLICO',PUBLICA:'PÚBLICA',CIENCIA:'CIÊNCIA',ENERGIA:'ENERGIA',UNIAO:'UNIÃO',JUSTICA:'JUSTIÇA',POLICIA:'POLÍCIA',AGENCIA:'AGÊNCIA',ECONOMIA:'ECONOMIA',FAZENDA:'FAZENDA',TECNOLOGIA:'TECNOLOGIA',INSTITUICAO:'INSTITUIÇÃO',FUNDACAO:'FUNDAÇÃO'};
+const acentua=w=>ACENTO[w]||w.replace(/CAO$/,'ÇÃO').replace(/COES$/,'ÇÕES').replace(/([^AEIOUÃÇ])AO$/,'$1ÃO');
+const suaviza=t=>t.replace(/\b[A-Z]{4,}\b/g,acentua).replace(/\b[A-ZÀ-Ý]{2,}\b/g,w=>SIGLAS.test(w)?w:(/^(DA|DE|DO|DAS|DOS|E)$/.test(w)?w.toLowerCase():w[0]+w.slice(1).toLowerCase()));
+function falar(texto){
+  texto=limpaFala(suaviza(texto));
+  return new Promise(ok=>{
+    const minha=++FILA; speechSynthesis.cancel();
+    const partes=pedacos(texto); if(!partes.length) return ok();
+    const voz=VOZES.find(v=>v.name===CFG.voz)||VOZES[0];
+    setFalando(true);
+    partes.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang='pt-BR';if(voz)u.voice=voz;u.rate=CFG.vel;
+      if(i===partes.length-1){u.onend=u.onerror=()=>{if(minha===FILA)setFalando(false);ok()}}
+      speechSynthesis.speak(u)});
+  });
+}
+let PARADAS=0;
+function calar(){PARADAS++;FILA++;speechSynthesis.cancel();setFalando(false)}
+let FALANDO=false, FIM_FALA=0;
+function setFalando(b){FALANDO=b;if(!b)FIM_FALA=Date.now();const p=document.getElementById('controles');if(p)p.hidden=!b;atualizaLampada()}
+
+/* ================== ouvido (reconhecimento) ================== */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null, QUER_OUVIR=false, ACORDADO_ATE=0;
+function atualizaLampada(){
+  const l=$('#lamp'),e=$('#estado');
+  l.className='lampada'+(FALANDO?' fala':(QUER_OUVIR?' on':''));
+  e.textContent=FALANDO?'falando…':(QUER_OUVIR?($('#continuo').checked?'ouvindo — chame "bot"':'ouvindo…'):'parado');
+  $('#mic').classList.toggle('on',QUER_OUVIR&&!FALANDO);
+}
+function ligarOuvido(){
+  if(!SR){addMsg('bot','Este navegador não reconhece voz. Use o Google Chrome ou o Edge. Dá pra digitar a pergunta embaixo.');return}
+  if(rec){try{rec.abort()}catch(e){}}
+  const cont=$('#continuo').checked;
+  rec=new SR(); rec.lang='pt-BR'; rec.continuous=cont; rec.interimResults=true; rec.maxAlternatives=1;
+  rec.onresult=e=>{
+    let parcial='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal){$('#parcial').textContent='';ouviu(t.trim())} else parcial+=t;
+    }
+    if(!FALANDO) $('#parcial').textContent=parcial;
+  };
+  rec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){QUER_OUVIR=false;addMsg('bot','O microfone foi bloqueado. Clique no cadeado da barra e libere o microfone.')}else if(e.error==='network'){addMsg('bot','O reconhecimento de voz precisa de internet.')}};
+  rec.onend=()=>{if(QUER_OUVIR&&$('#continuo').checked)setTimeout(()=>{if(QUER_OUVIR)try{rec.start()}catch(e){}},300);else{QUER_OUVIR=false;atualizaLampada()}};
+  QUER_OUVIR=true; atualizaLampada();
+  try{rec.start()}catch(e){}
+}
+function desligarOuvido(){QUER_OUVIR=false;if(rec)try{rec.abort()}catch(e){};$('#parcial').textContent='';atualizaLampada()}
+const ACORDA=/^(ok |ei |oi |e ai |fala )?(bot|bote|boot|bots|robo|robot|bo)\b[\s,]*/;
+function ouviu(t){
+  if(!t) return;
+  if(FALANDO||Date.now()-FIM_FALA<500){ // não ouvir a própria voz, mas deixar mandar parar
+    const nt=norm(t);
+    if(/\b(proxim|pula|passa)/.test(nt))pular(1);else if(/\b(volta|anterior)\b/.test(nt))pular(-1);else if(/\b(para|parar|chega|silencio|cala)\b/.test(nt))calar();
+    return;
+  }
+  if($('#continuo').checked){
+    const n=norm(t);
+    if(!ACORDA.test(n)&&!PEND&&Date.now()>ACORDADO_ATE) return;
+    if(ACORDA.test(n)&&!n.replace(ACORDA,'').trim()){ACORDADO_ATE=Date.now()+9000;addMsg('eu',t);responderEFalar('Oi, pode falar.',true);return}
+    ACORDADO_ATE=0;
+  }
+  perguntar(t);
+}
+$('#mic').onclick=()=>{ if(FALANDO){calar();return} QUER_OUVIR?desligarOuvido():ligarOuvido() };
+$('#continuo').onchange=()=>{LS.set('continuo',$('#continuo').checked);if(QUER_OUVIR)ligarOuvido()};
+document.addEventListener('keydown',e=>{
+  if(!e.target.closest('input,textarea,[contenteditable]')){if(e.key==='ArrowRight'&&FALANDO){e.preventDefault();pular(1)}if(e.key==='ArrowLeft'&&FALANDO){e.preventDefault();pular(-1)}}
+  if(e.key==='F2'){e.preventDefault();$('#mic').click()}if(e.key==='Escape')calar()});
+
+/* ================== conversa ================== */
+function addMsg(quem,texto,html){
+  $('#vazioLog')?.remove();
+  const d=document.createElement('div');d.className='msg '+quem;
+  if(html)d.innerHTML=html;else d.textContent=texto;
+  $('#log').appendChild(d);$('#log').scrollTop=$('#log').scrollHeight;
+}
+async function responderEFalar(resp,semMomento){
+  if(!resp) return;
+  addMsg('bot',resp.tela||resp, resp.html);
+  const fala=resp.fala||resp;
+  await falar((CFG.momento&&!semMomento?'Só um momento. ':'')+fala);
+}
+function perguntar(t){
+  addMsg('eu',t);
+  const r=responder(t);
+  marcarAtual();
+  responderEFalar(r, typeof r==='object'&&r.semMomento);
+}
+$('#formTxt').onsubmit=e=>{e.preventDefault();const t=$('#txt').value.trim();if(t){$('#txt').value='';perguntar(t)}};
+$('#btnParar').onclick=calar;
+$('#pare').onclick=calar;
+$('#proximo').onclick=()=>pular(1);
+$('#voltar').onclick=()=>pular(-1);
+
+/* ================== cérebro ================== */
+const STOP=new Set('bot bote boot robo para pra pro por com sem que qual quais quem quanto quantos quantas quando onde como tem ter tinha esta estao ta tao essa esse isso ela ele dela dele delas deles sua seu suas seus uma uns umas guia guias dados dado fala falar diz dizer diga me mim sobre favor pode poderia voce numero nome exame exames fez faz fazer vai ser sao era foi aqui ali agora tudo todos todas ler leia narra narrar mais menos tambem ainda sim nao senhor senhora dona'.split(' '));
+const PALAVRAS_CAMPO=new Set(CAMPOS.flatMap(c=>c.lab.join(' ').split(' ')).concat('telefone celular unidade trabalha remedio remedios medicamento peso pesa altura cpf exame exames procedimento'.split(' ')));
+const nomeG=g=>g.campos.nome||g.nomeArq||g.arquivo;
+const tokensNome=g=>new Set(norm(nomeG(g)+' '+(g.nomeArq||'')).split(/[^a-z]+/).filter(t=>t.length>=3&&!STOP.has(t)));
+function pontua(q,g){const qt=norm(q).split(/[^a-z]+/).filter(t=>t.length>=3&&!STOP.has(t));const nt=tokensNome(g);let s=0;qt.forEach(t=>{if(nt.has(t))s+=1;else if(t.length>=5&&[...nt].some(n=>n.startsWith(t)||t.startsWith(n)))s+=.6});return s}
+function acharPessoa(q){
+  let melhor=0,lista=[];
+  GUIAS.forEach(g=>{const s=pontua(q,g);if(s>melhor){melhor=s;lista=[g]}else if(s===melhor&&s>0)lista.push(g)});
+  let pediu=null; const re=/\b(?:da|do|de|dona|seu)\s+([a-z]{3,})/g; let m;
+  while((m=re.exec(q))){if(!STOP.has(m[1])&&!PALAVRAS_CAMPO.has(m[1]))pediu=m[1]}
+  if(lista.length>1){
+    const nomes=[...new Set(lista.map(nomeG))];
+    if(nomes.length>1) return {amb:lista,pediu};
+  }
+  return {g:lista[0]||null,pediu};
+}
+const pares=d=>(d.length%2?[d[0]].concat(d.slice(1).match(/../g)):d.match(/../g)).join(' ');
+const MESES='janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro'.split(' ');
+function digitosFalados(v){
+  const d=String(v).replace(/\D/g,''); if(!d) return v;
+  return d.length<=4?d.split('').join(' '):d.match(/.{1,3}/g).join(' ');
+}
+function telFalado(v){
+  const d=String(v).replace(/\D/g,'');
+  if(d.length===11) return d.slice(0,2)+' '+d[2]+' '+pares(d.slice(3));
+  if(d.length===10) return d.slice(0,2)+' '+pares(d.slice(2));
+  return pares(d)||v;
+}
+function dataFalada(v){const m=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);return m&&MESES[m[2]-1]?`${+m[1]} de ${MESES[m[2]-1]} de ${m[3]}`:v}
+function falaValor(k,v){
+  if(k==='telefone') return telFalado(v);
+  if(k==='unidade'||k==='uorgsup') return v.replace(/^\d+\s*-\s*/,'');
+  if(k==='codigo') return v;
+  if(k==='periodo') return v.replace(DATA_RE,d=>dataFalada(d));
+  if(['cpf','rg','cep','guia','matricula','ddd'].includes(k)) return digitosFalados(v);
+  if(['nascimento','data'].includes(k)) return dataFalada(v);
+  if(k==='sexo'){const n=norm(v);if(/^f/.test(n))return 'feminino';if(/^m/.test(n))return 'masculino'}
+  if(k==='peso'&&/^\d+([.,]\d+)?$/.test(v.trim())) return v.trim()+' quilos';
+  if(k==='medicamentos'||k==='alergias') return eLista(v.split(/\s*[,;]\s*|\s+e\s+/).filter(Boolean));
+  return v;
+}
+const eLista=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' e '+a[a.length-1];
+const minusc=t=>t.replace(/\b[A-ZÀ-Ý]{3,}\b/g,w=>SIGLAS.test(w)?w:w.toLowerCase()).replace(/^\s*\S/,c=>c.toLowerCase());
+function listaExames(g){return eLista(g.exames.map(e=>minusc(e.desc)))}
+const tit=t=>String(t||'').toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase()).replace(/\b(Da|De|Do|Das|Dos|E)\b/g,w=>w.toLowerCase());
+function apelido(g){
+  const p=norm(nomeG(g)).split(' '); const iguais=GUIAS.filter(x=>x!==g&&norm(nomeG(x)).split(' ')[0]===p[0]).length;
+  const orig=tit(nomeG(g)).split(' '); let n=orig[0];
+  if(iguais){let i=1;while(i<orig.length&&/^(da|de|do|das|dos|e)$/.test(orig[i]))n+=' '+orig[i++];if(orig[i])n+=' '+orig[i]}
+  return n;
+}
+function art(g){const sx=norm(g.campos.sexo||'');if(/^f/.test(sx))return 'a';if(/^m/.test(sx))return 'o';return /a$/.test(norm(apelido(g)).split(' ')[0])?'a':'o'}
+const noNa=v=>/^(hospital|posto|instituto|ministerio|centro|departamento|setor|nucleo|servico|hu|inca|inss|ibge|ifrj|tribunal|banco|colegio|campus)/.test(norm(v))?'no':/^(comissao|autarquia|procuradoria|controladoria|defensoria|advocacia|justica|policia federal|prefeitura|secretaria|unidade|universidade|fundacao|escola|policia|marinha|receita|agencia|clinica|superintendencia|coordenacao|ufrj|uff|uerj|fiocruz)/.test(norm(v))?'na':'em';
+const de=g=>art(g)==='a'?'da':'do';
+const quemFala=g=>`${art(g)==='a'?'A':'O'} ${apelido(g)}`;
+const FRASE={
+  telefone:(g,v)=>g.tipo==='siass'?`O telefone do órgão ${de(g)} ${apelido(g)} é ${v}.`:`O telefone ${de(g)} ${apelido(g)} é ${v}.`,
+  periodo:(g,v)=>`Os exames podem ser feitos de ${v}.`,
+  unidade:(g,v)=>`${quemFala(g)} trabalha ${noNa(v)} ${v}.`,
+  orgao:(g,v)=>`${quemFala(g)} é do órgão ${v}.`,
+  cargo:(g,v)=>`${quemFala(g)} trabalha como ${minusc(v)}.`,
+  nascimento:(g,v)=>`${quemFala(g)} nasceu em ${v}.`,
+  idade:(g,v)=>`${quemFala(g)} tem ${v}.`,
+  peso:(g,v)=>`${quemFala(g)} pesa ${v}.`,
+  altura:(g,v)=>`${quemFala(g)} tem ${v} de altura.`,
+  medicamentos:(g,v)=>`${quemFala(g)} toma ${v}.`,
+  alergias:(g,v)=>`${quemFala(g)} tem alergia a ${v}.`,
+  cidade:(g,v)=>`A cidade na guia é ${v}.`,
+  endereco:(g,v)=>g.tipo==='siass'?`O endereço do órgão é ${v}.`:`${quemFala(g)} mora em ${v}.`,
+  sexo:(g,v)=>`Na guia está ${v}.`,
+  data:(g,v)=>`A data da guia é ${v}.`,
+  diagnostico:(g,v)=>`O diagnóstico é ${v}.`,
+};
+function narracaoPDF(g){
+  const c=g.campos,N=CFG.narrar,f=[];
+  const ordem=(g.ordem&&g.ordem.length?g.ordem:Object.keys(c).concat(g.exames.length?['exames']:[]));
+  ordem.forEach(k=>{
+    if(!N.includes(k)&&!(k==='orgao'&&N.includes('unidade'))) return;
+    if(k==='exames'){const n=g.exames.length;f.push(`Exames requisitados: ${n===1?'um exame, '+listaExames(g):'total de '+n+' exames: '+listaExames(g)}.`);return}
+    if(!c[k]||!CAMPO[k]) return;
+    const ROT_SIASS={orgao:'Órgão responsável',nome:'Servidor',uf:'UF',cidade:'Município',unidade:'Lotação',telefone:'Telefone do órgão'};
+    const r0=(g.tipo==='siass'&&ROT_SIASS[k])||CAMPO[k].rot;
+    const rot=r0[0].toUpperCase()+r0.slice(1);
+    const v=k==='nome'?tit(c[k]):falaValor(k,c[k]);
+    f.push(`${rot}: ${v}.`);
+  });
+  return f.join(' ')||'Não achei dados nessa guia.';
+}
+function narracaoSIASS(g){
+  const c=g.campos,ela=art(g)==='a'?'Ela':'Ele',f=[];
+  f.push(`Essa é a guia ${de(g)} ${tit(nomeG(g))}.`);
+  if(c.nascimento&&c.cpf) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)} e tem o CPF ${digitosFalados(c.cpf)}.`);
+  else if(c.nascimento) f.push(`${ela} nasceu em ${dataFalada(c.nascimento)}.`);
+  else if(c.cpf) f.push(`${ela} tem o CPF ${digitosFalados(c.cpf)}.`);
+  if(c.orgao){
+    let t=`${ela} trabalha ${noNa(c.orgao)} ${c.orgao}`;
+    if(c.telefone) t+=`, cujo telefone é ${telFalado(c.telefone)}`;
+    if(c.cidade) t+=`, ${/^rio\b/.test(norm(c.cidade))?'no':'em'} ${c.cidade}`;
+    f.push(t+'.');
+  }
+  const n=g.exames.length;
+  if(n){
+    f.push(`Os exames que ${ela.toLowerCase()} fez: ${n===1?'um exame':n+' exames'}.`);
+    g.exames.forEach(e=>f.push(`${minusc(e.desc).replace(/^./,x=>x.toUpperCase())}${e.cod?', código '+pares(e.cod):''}.`));
+  } else f.push('Não achei exames na guia.');
+  return f.join(' ');
+}
+function narracao(g){
+  if(g.tipo==='siass') return narracaoSIASS(g);
+  if(CFG.modo==='pdf') return narracaoPDF(g);
+  const c=g.campos,N=CFG.narrar,ela=art(g)==='a'?'ela':'ele',p=[];
+  const ini=N.includes('nome')?`Essa é a guia ${de(g)} ${tit(nomeG(g))}`:`Essa é a guia ${de(g)} ${apelido(g)}`;
+  const loc=c.unidade||c.orgao;
+  if(N.includes('cargo')&&c.cargo&&N.includes('unidade')&&loc) p.push(`trabalha como ${minusc(c.cargo)} ${noNa(loc)} ${loc}`);
+  else if(N.includes('unidade')&&loc) p.push(`trabalha ${noNa(loc)} ${loc}`);
+  else if(N.includes('cargo')&&c.cargo) p.push(`trabalha como ${minusc(c.cargo)}`);
+  if(N.includes('cidade')&&c.cidade) p.push(`${/^rio\b/.test(norm(c.cidade))?'no':'em'} ${c.cidade}`);
+  if(N.includes('idade')&&c.idade) p.push(`tem ${c.idade}`);
+  if(N.includes('peso')&&c.peso) p.push(`pesa ${falaValor('peso',c.peso)}`);
+  if(N.includes('altura')&&c.altura) p.push(`mede ${c.altura}`);
+  if(N.includes('pressao')&&c.pressao) p.push(`está com pressão ${c.pressao}`);
+  if(N.includes('medicamentos')&&c.medicamentos) p.push(`toma ${falaValor('medicamentos',c.medicamentos)}`);
+  if(N.includes('alergias')&&c.alergias) p.push(`tem alergia a ${falaValor('alergias',c.alergias)}`);
+  // junta: "trabalha ... em Rio" fica na mesma parte
+  const partes=[];p.forEach(x=>{if(/^(em|no) /.test(x)&&partes.length&&/^trabalha/.test(partes[partes.length-1]))partes[partes.length-1]+=', '+x;else partes.push(x)});
+  let txt=ini+(partes.length?', '+(partes.length>1?partes.slice(0,-1).join(', ')+' e '+partes[partes.length-1]:partes[0]):'')+'.';
+  const feitos=new Set(['nome','cargo','unidade','orgao','cidade','idade','peso','altura','pressao','medicamentos','alergias','exames']);
+  N.forEach(k=>{if(feitos.has(k)||!c[k]||!CAMPO[k])return;const fv=falaValor(k,c[k]);txt+=' '+(FRASE[k]?FRASE[k](g,fv).replace(quemFala(g),ela[0].toUpperCase()+ela.slice(1)):`O ${CAMPO[k].rot} é ${fv}.`)});
+  if(N.includes('exames')){const n=g.exames.length;txt+=n?` ${ela[0].toUpperCase()+ela.slice(1)} tem ${n===1?'um exame':n+' exames'}: ${listaExames(g)}.`:' Não achei exames na guia.'}
+  return txt;
+}
+function buscaLivre(g,q){
+  const qt=norm(q).split(/[^a-z0-9]+/).filter(t=>t.length>=3&&!STOP.has(t)&&!tokensNome(g).has(t));
+  if(!qt.length) return null;
+  const linhas=g.texto.split(/\r?\n/).filter(l=>l.trim());
+  let best=-1,bi=-1;
+  linhas.forEach((l,i)=>{const nl=normC(l);let s=0;qt.forEach(t=>{if(nl.includes(t))s+=t.length>=5?2:1});if(s>best){best=s;bi=i}});
+  if(best<=0) return null;
+  let r=linhas[bi].replace(/\s{3,}/g,' — ').trim();
+  if(/:\s*$/.test(r)&&linhas[bi+1]) r+=' '+linhas[bi+1].trim();
+  return r;
+}
+function responder(qOrig){
+  let q=norm(qOrig).replace(/[?!.,;]/g,' ').replace(/\s+/g,' ').trim().replace(ACORDA,'').trim();
+  if(!q) return 'Pode falar.';
+  if(/^(para|parar|chega|silencio|cala a boca|cala)$/.test(q)){calar();return null}
+  if(/^(proxim[ao]|pula|pular|passa|avanca)( guia)?$/.test(q)){pular(1);return null}
+  if(/^(volta|voltar|anterior)( guia)?$/.test(q)){pular(-1);return null}
+  if(!GUIAS.length) return 'Ainda não tem nenhuma guia carregada. Sobe os PDFs do lado direito.';
+  if(PEND){
+    const p=PEND; PEND=null;
+    const ord=['primeira','segunda','terceira','quarta','quinta'].findIndex(o=>q.includes(o));
+    let g=ord>=0?p.opcoes[ord]:null;
+    if(!g){let best=0;p.opcoes.forEach(o=>{const s=pontua(q,o);if(s>best){best=s;g=o}})}
+    if(g){CTX=g;return responderSobre(g,p.q)}
+  }
+  if(/\bquant[ao]s (guias|pessoas|pacientes)\b/.test(q)) return `Tenho ${GUIAS.length} ${GUIAS.length===1?'guia carregada':'guias carregadas'}.`;
+  if(/\b(quais (sao )?as guias|quem (tem|esta) (guia|aqui)|de quem sao|lista (as )?guias)\b/.test(q)) return 'As guias são de: '+GUIAS.map(nomeG).join('; ')+'.';
+  if(/\b(narr|le|ler|leia)\w* (todas|tudo)\b/.test(q)&&!/\b(da|do|de) [a-z]{3,}/.test(q.replace(/\b(todas|tudo)\b.*/,''))){narrarTodas();return null}
+  const r=acharPessoa(q);
+  if(r.amb){PEND={q,opcoes:r.amb};return {tela:`Achei ${r.amb.length}: ${r.amb.map(nomeG).join('; ')}. De qual?`,fala:`Tenho ${r.amb.length === 2 ? 'duas' : r.amb.length}: ${eLista(r.amb.map(x=>tit(nomeG(x))))}. Qual delas?`,semMomento:true}}
+  let g=r.g;
+  if(!g){
+    if(r.pediu) return `Não achei nenhuma guia de ${r.pediu}.`;
+    g=CTX||(GUIAS.length===1?GUIAS[0]:null);
+    if(!g) return 'De quem? Fala o nome da pessoa.';
+  }
+  CTX=g; return responderSobre(g,q);
+}
+function responderSobre(g,q){
+  const nome=nomeG(g), c=g.campos;
+  if(/\b(narr|resum|ficha|tudo (da|do|sobre)|le a guia|ler a guia|leia a guia|me conta)/.test(q)) return narracao(g);
+  if(/\bquant\w* exames?\b|\b(numero|quantidade) de exames\b/.test(q)){const n=g.exames.length;return n?{tela:`${nome}: ${n} ${n===1?'exame':'exames'}`,fala:`${quemFala(g)} tem ${n===1?'um exame':n+' exames'} na guia.`}:`Não encontrei exames na guia ${de(g)} ${apelido(g)}.`}
+  if(/\b(exames?|procedimentos?)\b/.test(q)&&!/\b(tipo|data|codigo)\b/.test(q)){const n=g.exames.length;return n?{tela:`Exames de ${nome} (${n}): `+g.exames.map(e=>e.desc+(e.cod?` (${e.cod})`:'')).join('; '),fala:`${quemFala(g)} tem ${n===1?'um exame':n+' exames'}: ${listaExames(g)}.`}:`Não encontrei exames na guia ${de(g)} ${apelido(g)}.`}
+  if(/\bcodigos?\b/.test(q)&&g.exames.some(e=>e.cod)) return {tela:'Códigos: '+g.exames.map(e=>e.cod).join(', '),fala:'Os códigos são '+eLista(g.exames.filter(e=>e.cod).map(e=>pares(e.cod)))+'.'};
+  for(const cp of CAMPOS){
+    if(!cp.re.test(q)) continue;
+    let v=c[cp.k];
+    if(cp.k==='unidade'&&c.orgao){const lot=c.unidade?falaValor('unidade',c.unidade):'';return {tela:`${nome}: ${c.orgao}${c.unidade?' / lotação '+c.unidade:''}`,fala:`${quemFala(g)} trabalha ${noNa(c.orgao)} ${c.orgao}.`}}
+    if(!v&&cp.k==='uf') v=c.cidade&&(c.cidade.match(/\b[A-Z]{2}\b/)||[])[0];
+    if(v){const fv=falaValor(cp.k,v);return {tela:`${cp.rot[0].toUpperCase()+cp.rot.slice(1)} de ${nome}: ${v}`,fala:FRASE[cp.k]?FRASE[cp.k](g,fv):`${/a$|ão$|gem$/.test(cp.rot)?'A':'O'} ${cp.rot} ${de(g)} ${apelido(g)} é ${fv}.`}}
+    const livre=buscaLivre(g,q);
+    if(livre) return {tela:`Na guia de ${nome} achei: ${livre}`,fala:`Na guia ${de(g)} ${apelido(g)} está assim: ${livre}.`};
+    return `Não encontrei ${cp.rot} na guia ${de(g)} ${apelido(g)}.`;
+  }
+  if(/\b(nome|quem e)\b/.test(q)&&c.nome) return {tela:`Nome: ${c.nome}`,fala:`O nome completo é ${tit(c.nome)}.`};
+  const livre=buscaLivre(g,q);
+  if(livre) return {tela:`Na guia de ${nome} achei: ${livre}`,fala:`Na guia ${de(g)} ${apelido(g)} está assim: ${livre}.`};
+  return `Não achei isso na guia ${de(g)} ${apelido(g)}. Pergunta de outro jeito.`;
+}
+let SEQ=false;
+async function narrarDe(i,seq){
+  if(!GUIAS.length) return;
+  i=Math.max(0,Math.min(i,GUIAS.length-1)); SEQ=seq;
+  const minha=++PARADAS; FILA++; speechSynthesis.cancel();
+  for(let k=i;k<GUIAS.length;k++){
+    if(PARADAS!==minha) return;
+    const g=GUIAS[k]; CTX=g; marcarAtual();
+    const t=narracao(g); addMsg('bot',t);
+    await falar(t);
+    if(!seq) break;
+  }
+}
+function narrarTodas(){ if(GUIAS.length){addMsg('bot',`Narrando ${GUIAS.length} guias…`);narrarDe(0,true)} }
+function pular(d){
+  if(!GUIAS.length) return;
+  const i=CTX?GUIAS.indexOf(CTX):-1, j=i+d;
+  if(j<0){calar();falar('Essa é a primeira guia.');return}
+  if(j>=GUIAS.length){calar();falar('Essa é a última guia.');return}
+  narrarDe(j,SEQ);
+}
+
+/* ================== lista de guias ================== */
+const ICO={
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  abrir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>',
+  cima:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 15l6-6 6 6"/></svg>',
+  baixo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>',
+  lixo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+};
+function render(){
+  $('#contagem').textContent=GUIAS.length?`${GUIAS.length} ${GUIAS.length===1?'carregada':'carregadas'}`:'nenhuma';
+  $('#lista').innerHTML=GUIAS.map(g=>{
+    const c=g.campos;
+    const sub=[c.unidade||c.orgao,c.telefone,g.exames.length?g.exames.length+' exames':''].filter(Boolean).join(' / ')||g.arquivo;
+    const rows=CAMPOS.map(cp=>`<tr><td>${esc(cp.rot)}</td><td contenteditable data-k="${cp.k}">${esc(c[cp.k]||'')}</td></tr>`).join('');
+    return `<article class="guia" data-id="${g.id}">
+      <div class="cab"><span class="pega" title="Arraste pra mudar a ordem">⠿</span><span class="num">${GUIAS.indexOf(g)+1}</span><div class="quem"><div class="nome">${esc(nomeG(g))}</div><div class="sub">${esc(sub)}</div></div>
+      <span class="setas"><button class="ico mini" data-a="subir" title="Subir na lista">${ICO.cima}</button><button class="ico mini" data-a="descer" title="Descer na lista">${ICO.baixo}</button></span>
+      <button class="ico" data-a="narrar" title="Narrar esta guia">${ICO.play}</button>
+      <button class="ico" data-a="abrir" title="Ver e corrigir dados">${ICO.abrir}</button>
+      <button class="ico" data-a="apagar" title="Apagar guia">${ICO.lixo}</button></div>
+      <div class="corpo"><table>${rows}</table>
+      <ol class="exs">${g.exames.map(e=>`<li>${esc(e.desc)} ${e.cod?`<span class="cod">${esc(e.cod)}</span>`:''}</li>`).join('')||'<li>nenhum exame encontrado</li>'}</ol>
+      <div class="rodape-corpo"><button class="lnk" data-a="bruto">Ver texto lido do PDF</button><span class="cod">${esc(g.arquivo)}</span></div>
+      <div class="bruto">${esc(g.texto)}</div></div></article>`}).join('');
+  marcarAtual();
+}
+function marcarAtual(){document.querySelectorAll('.guia').forEach(el=>el.classList.toggle('atual',!!CTX&&el.dataset.id===CTX.id))}
+function salvarOrdem(){GUIAS.forEach((g,i)=>{if(g.pos!==i){g.pos=i;DB.salvar(g)}})}
+function mover(g,para){const i=GUIAS.indexOf(g);if(para<0||para>=GUIAS.length||para===i)return;GUIAS.splice(i,1);GUIAS.splice(para,0,g);salvarOrdem();render();
+  const el=document.querySelector(`.guia[data-id="${g.id}"]`);if(el)el.scrollIntoView({block:'nearest'})}
+let ARRASTA=null;
+$('#lista').addEventListener('mousedown',e=>{const h=e.target.closest('.pega');if(h)h.closest('.guia').draggable=true});
+document.addEventListener('mouseup',()=>document.querySelectorAll('.guia[draggable="true"]').forEach(x=>{if(!ARRASTA)x.draggable=false}));
+$('#lista').addEventListener('dragstart',e=>{const a=e.target.closest('.guia');if(!a)return;ARRASTA=a.dataset.id;a.classList.add('arrastando');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',ARRASTA)});
+$('#lista').addEventListener('dragend',()=>{ARRASTA=null;document.querySelectorAll('.guia').forEach(x=>{x.classList.remove('arrastando','alvo-cima','alvo-baixo');x.draggable=false})});
+$('#lista').addEventListener('dragover',e=>{if(!ARRASTA)return;e.preventDefault();e.stopPropagation();const a=e.target.closest('.guia');document.querySelectorAll('.guia').forEach(x=>x.classList.remove('alvo-cima','alvo-baixo'));if(!a||a.dataset.id===ARRASTA)return;const r=a.getBoundingClientRect();a.classList.add(e.clientY<r.top+r.height/2?'alvo-cima':'alvo-baixo')});
+$('#lista').addEventListener('drop',e=>{if(!ARRASTA)return;e.preventDefault();e.stopPropagation();const a=e.target.closest('.guia');const g=GUIAS.find(x=>x.id===ARRASTA);if(!a||!g||a.dataset.id===ARRASTA)return;
+  const alvo=GUIAS.find(x=>x.id===a.dataset.id);const r=a.getBoundingClientRect();const depois=e.clientY>=r.top+r.height/2;
+  GUIAS.splice(GUIAS.indexOf(g),1);let j=GUIAS.indexOf(alvo)+(depois?1:0);GUIAS.splice(j,0,g);salvarOrdem();render()});
+$('#lista').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const art=b.closest('.guia');const g=GUIAS.find(x=>x.id===art.dataset.id);if(!g)return;
+  if(b.dataset.a==='subir'){mover(g,GUIAS.indexOf(g)-1);return}
+  if(b.dataset.a==='descer'){mover(g,GUIAS.indexOf(g)+1);return}
+  if(b.dataset.a==='abrir')art.classList.toggle('aberta');
+  if(b.dataset.a==='bruto')art.querySelector('.bruto').classList.toggle('ver');
+  if(b.dataset.a==='narrar'){narrarDe(GUIAS.indexOf(g),false)}
+  if(b.dataset.a==='apagar'&&confirm(`Apagar a guia de ${nomeG(g)}?`)){GUIAS=GUIAS.filter(x=>x!==g);if(CTX===g)CTX=null;DB.apagar(g.id);render()}
+});
+$('#lista').addEventListener('focusout',e=>{
+  const td=e.target.closest('td[data-k]');if(!td)return;const g=GUIAS.find(x=>x.id===td.closest('.guia').dataset.id);
+  const v=td.textContent.trim();if((g.campos[td.dataset.k]||'')===v)return;
+  if(v)g.campos[td.dataset.k]=v;else delete g.campos[td.dataset.k];DB.salvar(g);
+  const art=td.closest('.guia');art.querySelector('.nome').textContent=nomeG(g);
+});
+$('#lista').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('td[contenteditable]')){e.preventDefault();e.target.blur()}});
+$('#limpar').onclick=()=>{if(GUIAS.length&&confirm('Apagar TODAS as guias carregadas?')){GUIAS=[];CTX=null;DB.limpar();render()}};
+$('#narrarTodas').onclick=narrarTodas;
+$('#az').onclick=()=>{if(GUIAS.length>1&&confirm('Colocar as guias em ordem alfabética? A ordem que você montou será trocada.')){GUIAS.sort((a,b)=>nomeG(a).localeCompare(nomeG(b),'pt'));salvarOrdem();render()}};
+
+/* ================== subir arquivos ================== */
+async function subir(files){
+  files=[...files].filter(f=>/pdf$/i.test(f.name)||/^image\//.test(f.type));
+  for(let i=0;i<files.length;i++){
+    const f=files[i]; const aviso=t=>$('#fila').textContent=`(${i+1}/${files.length}) ${f.name}: ${t}`;
+    try{
+      const texto=await lerArquivo(f,aviso);
+      const {campos,nomeArq,exames,ordem,tipo}=extrair(texto,f.name);
+      const velha=GUIAS.find(g=>g.arquivo===f.name);
+      const g={id:velha?velha.id:(Date.now().toString(36)+Math.random().toString(36).slice(2,6)),arquivo:f.name,texto,campos,nomeArq,exames,ordem,tipo:tipo||'',em:Date.now(),pos:velha?velha.pos:GUIAS.length};
+      if(velha)GUIAS[GUIAS.indexOf(velha)]=g;else GUIAS.push(g);
+      DB.salvar(g);
+    }catch(err){addMsg('bot',`Não consegui ler ${f.name}: ${err.message||err}`)}
+  }
+  $('#fila').textContent=files.length?`${files.length} ${files.length===1?'arquivo lido':'arquivos lidos'}.`:'';
+  salvarOrdem();
+  render();
+}
+$('#btnSubir').onclick=()=>$('#arq').click();
+$('#arq').onchange=e=>{subir(e.target.files);e.target.value=''};
+const solta=$('#solta');
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(!ARRASTA&&[...(e.dataTransfer.types||[])].includes('Files'))solta.classList.add('sobre')}));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||!e.relatedTarget)solta.classList.remove('sobre')}));
+document.addEventListener('drop',e=>{if(!ARRASTA&&e.dataTransfer.files.length)subir(e.dataTransfer.files)});
+
+/* ================== ajustes ================== */
+$('#btnAjustes').onclick=()=>{
+  carregarVozes(); $('#vel').value=CFG.vel; $('#velTxt').textContent=CFG.vel.toFixed(2).replace('.',',')+'×'; $('#momento').checked=CFG.momento; $('#modo').value=CFG.modo; $('#ocrSempre').checked=CFG.ocrSempre;
+  $('#marcas').innerHTML=[...CAMPOS.filter(c=>!['mae','pai','ddd'].includes(c.k)),{k:'exames',rot:'exames'}].map(c=>`<label><input type="checkbox" value="${c.k}" ${CFG.narrar.includes(c.k)?'checked':''}> ${esc(c.rot)}</label>`).join('');
+  $('#dlg').showModal();
+};
+$('#voz').onchange=e=>{CFG.voz=e.target.value;LS.set('voz',CFG.voz)};
+$('#vel').oninput=e=>{CFG.vel=+e.target.value;$('#velTxt').textContent=CFG.vel.toFixed(2).replace('.',',')+'×';LS.set('vel2',CFG.vel)};
+$('#ocrSempre').onchange=e=>{CFG.ocrSempre=e.target.checked;LS.set('ocrSempre',CFG.ocrSempre)};
+$('#modo').onchange=e=>{CFG.modo=e.target.value;LS.set('modo',CFG.modo)};
+$('#momento').onchange=e=>{CFG.momento=e.target.checked;LS.set('momento',CFG.momento)};
+$('#marcas').onchange=()=>{const ordem=[...$('#marcas').querySelectorAll('input')].filter(i=>i.checked).map(i=>i.value);CFG.narrar=ordem;LS.set('narrar2',ordem)};
+$('#testarVoz').onclick=()=>falar('Oi! Eu sou o bot das guias. Pode perguntar.');
+$('#fecharDlg').onclick=()=>$('#dlg').close();
+
+/* ================== início ================== */
+(async()=>{
+  $('#continuo').checked=LS.get('continuo',false);
+  if(!window.pdfjsLib) addMsg('bot','Sem internet: não consegui carregar o leitor de PDF. Conecte e reabra.');
+  try{await DB.abrir();GUIAS=await DB.todas();GUIAS.sort((a,b)=>((a.pos??1e9)-(b.pos??1e9))||nomeG(a).localeCompare(nomeG(b),'pt'));salvarOrdem()}catch(e){}
+  render();
+  if(!SR) $('#dica').textContent='Este navegador não tem reconhecimento de voz. Use o Chrome ou o Edge — ou digite embaixo.';
+})();
+</script>
+</body>
+</html>
