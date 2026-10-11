@@ -138,7 +138,7 @@ dialog::backdrop{background:rgba(10,30,38,.55)}
   <section class="conversa">
     <div class="topo">
       <span class="lampada" id="lamp"></span>
-      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v14</small>
+      <h1>Bot das Guias</h1><small style="color:#9cb6bd">v15</small>
       <span class="estado" id="estado">parado</span>
       <button id="btnParar" title="Parar de falar">Calar</button>
       <button id="btnAjustes">Ajustes</button>
@@ -280,15 +280,27 @@ async function ocrWorker(){
 }
 function linhasDoTSV(tsv){
   return linhasDePalavras(String(tsv||'').split('\n').slice(1).map(l=>l.split('\t')).filter(c=>c[0]==='5'&&c[11]&&c[11].trim())
-    .map(c=>({x:+c[6],y:+c[7],w:+c[8],h:+c[9],t:c[11].trim()})));
+    .map(c=>({x:+c[6],y:+c[7],w:+c[8],h:+c[9],t:c[11].trim(),ln:c[1]+'.'+c[2]+'.'+c[3]+'.'+c[4]})));
+}
+function inclinacao(ws){
+  const por={};ws.forEach(w=>{if(w.ln!=null)(por[w.ln]=por[w.ln]||[]).push(w)});
+  const sl=[];
+  Object.values(por).forEach(l=>{if(l.length<3)return;l.sort((a,b)=>a.x-b.x);const a=l[0],b=l[l.length-1];const dx=(b.x+b.w/2)-(a.x+a.w/2);if(dx<150)return;
+    // regressão simples
+    const n=l.length,mx=l.reduce((s,w)=>s+w.x+w.w/2,0)/n,my=l.reduce((s,w)=>s+w.y+w.h/2,0)/n;
+    let num=0,den=0;l.forEach(w=>{const x=w.x+w.w/2-mx;num+=x*(w.y+w.h/2-my);den+=x*x});if(den)sl.push(num/den)});
+  if(!sl.length)return 0;sl.sort((a,b)=>a-b);const m=sl[sl.length>>1];return Math.abs(m)>0.1?0:m;
 }
 function palavrasDosBlocos(data){
-  let ws=data.words;
-  if(!ws||!ws.length){ws=[];(data.blocks||[]).forEach(b=>(b.paragraphs||[]).forEach(p=>(p.lines||[]).forEach(l=>(l.words||[]).forEach(w=>ws.push(w)))))}
-  return ws.filter(w=>w.text&&w.text.trim()&&w.bbox).map(w=>({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim()}));
+  const ws=[];
+  (data.blocks||[]).forEach((b,bi)=>(b.paragraphs||[]).forEach((p,pi)=>(p.lines||[]).forEach((l,li)=>(l.words||[]).forEach(w=>{if(w.text&&w.text.trim()&&w.bbox)ws.push({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim(),ln:bi+'.'+pi+'.'+li})}))));
+  if(!ws.length&&data.words)data.words.forEach(w=>{if(w.text&&w.text.trim()&&w.bbox)ws.push({x:w.bbox.x0,y:w.bbox.y0,w:w.bbox.x1-w.bbox.x0,h:w.bbox.y1-w.bbox.y0,t:w.text.trim()})});
+  return ws;
 }
 function linhasDePalavras(ws){
   if(!ws.length) return '';
+  const k=inclinacao(ws);
+  ws=ws.map(w=>({...w,y:w.y-k*(w.x+w.w/2)}));
   const hs=ws.map(w=>w.h).sort((a,b)=>a-b), hm=hs[hs.length>>1]||20;
   ws.sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
   const rows=[];
@@ -349,7 +361,7 @@ function cortaRotulos(linha,rots){ // rots: [[chave, regex do rótulo]]
   return {out,primeiro:achados.length?achados[0].ini:-1};
 }
 function nomeExame(cod,resto){
-  let [nome,obs]=resto.split(/\s*-?\s*observa\S*\s*:?\s*-?\s*/i);
+  let [nome,obs]=resto.split(/\s*-?\s*[o0@]bserv\S*\s*:?\s*-?\s*/i);
   nome=limpaValor((nome||'').replace(/\s{4,}.*$/,''));obs=limpaValor((obs||'').replace(/\s{4,}.*$/,'').replace(/\.\s*$/,''));
   if((!nome||/^em consultorio/.test(norm(nome)))&&obs) return {cod,desc:obs};
   if(/^em consultorio/.test(norm(nome))) nome='Consulta em consultório';
@@ -373,13 +385,14 @@ function extrairSIASS(linhas,arquivo){
   }
   // órgão responsável
   const fila=[];
+  const semTitulo=L=>L.replace(/[oó0][rn]g\S*\s+respons\S*/ig,' ').replace(/dados\s+d\S*\s+serv\S*/ig,' ').replace(/\s{5,}/g,'    ');
   const rotSo=l=>{const t=l.replace(/[^a-z ]/g,' ').replace(/\s+/g,' ').trim();return t==='nome'?'orgao':/^uorg sup\w*$/.test(t)?'uorgsup':/^uorg lot\w*$/.test(t)?'unidade':/^endere\w*$/.test(t)?'endereco':/^munic\w*$/.test(t)?'cidade':null};
   for(let i=Math.max(iOrg,0);i<(iServ>0?iServ:iEx);i++){
-    const L=linhas[i],l=n[i];
-    if(/orgao respons/.test(l)&&l.replace(/[^a-z]/g,'').length<20) continue;
+    const L=semTitulo(linhas[i]),l=normC(L);
+    if(!l.replace(/[^a-z0-9]/g,''))continue;
     const so=rotSo(l); if(so){fila.push(so);continue}
     if(fila.length&&!/(^|\s)uf(\s|$)|telefone/.test(l)&&!/^\W*\(?\d{2}\)?\s?\d{4}/.test(L)){const k=fila.shift();if(!c[k]){c[k]=limpaValor(L.replace(/^[!|'‘`]+/,''));pos(k)}continue}
-    if(/^\W*nome\b/.test(l)&&!c.orgao){c.orgao=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[!|'‘`]+/,''));pos('orgao');continue}
+    if(/^\W*nome\b/.test(l)&&!c.orgao){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú0-9]+/,''));if(v.replace(/[^A-Za-z]/g,'').length>=4){c.orgao=v;pos('orgao')}else fila.push('orgao');continue}
     if(/^\W*uorg\s*sup/.test(l)){c.uorgsup=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('uorgsup');continue}
     if(/^\W*uorg\s*lot/.test(l)){c.unidade=limpaValor(L.replace(/^\W*\S+\s+\S+/,''));pos('unidade');continue}
     if(/^\W*endere/.test(l)){c.endereco=limpaValor(L.replace(/^\W*\S+/,''));pos('endereco');continue}
@@ -392,11 +405,12 @@ function extrairSIASS(linhas,arquivo){
     if(!c.telefone){const m=L.match(/\(?\d{2}\)?\s?\d{4,5}-\d{4}/);if(m){c.telefone=m[0];pos('telefone')}}
   }
   // dados do servidor
-  for(let i=iServ+1;iServ>=0&&i<iEx;i++){
-    const L=linhas[i],l=n[i];
+  for(let i=iServ;iServ>=0&&i<iEx;i++){
+    const L=semTitulo(linhas[i]),l=normC(L);
+    if(!l.replace(/[^a-z0-9]/g,''))continue;
     if(/autentic/.test(l))break;
-    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
-    if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L);pos('nome');delete c._nomeProx;continue}
+    if(/^\W*nome\b/.test(l)&&!c.nome){const v=limpaValor(L.replace(/^\W*nome\W*/i,'').replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));if(v){c.nome=v;pos('nome')}else c._nomeProx=1;continue}
+    if(c._nomeProx&&!c.nome&&!/sexo|cpf|nasc|\brg\b/.test(l)){c.nome=limpaValor(L.replace(/^[^A-Za-zÀ-ú]+/,'').replace(/\s{4,}.*$/,''));pos('nome');delete c._nomeProx;continue}
     const {out}=cortaRotulos(L,[['sexo','sexo'],['nascimento','data\\s*de\\s*nasc\\S*|nascimento'],['cpf','cpf'],['rg','rg']]);
     if(out.nascimento){const d=out.nascimento.match(DATA_RE);if(d)out.nascimento=d[0].replace(/\s/g,'')}
     if(out.cpf)out.cpf=out.cpf.replace(/[^\d.\-]/g,'');
@@ -406,6 +420,7 @@ function extrairSIASS(linhas,arquivo){
     if(c.nascimento&&!c.idade){const m=c.nascimento.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(m){const d=new Date(+m[3],m[2]-1,+m[1]),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),m[2]-1,+m[1]))a--;if(a>0&&a<120){c.idade=a+' anos';pos('idade')}}}
   }
   delete c._nomeProx;
+  ['nome','orgao'].forEach(k=>{if(c[k])c[k]=c[k].replace(/^[^A-Za-zÀ-ú0-9]+/,'').replace(/\s+[^A-Za-zÀ-ú0-9\s]+$/,'').trim()});
   const tudo=linhas.join('\n'),serv=linhas.slice(Math.max(iServ,0),iEx).join('\n');
   if(!c.nascimento){const ds=(serv.match(DATA_RE)||[]).map(d=>d.replace(/\s/g,'')).filter(d=>d!==c.data&&!(c.periodo||'').includes(d));if(ds[0]){c.nascimento=ds[0];pos('nascimento')}}
   if(!c.telefone){const m=tudo.match(/\(?\b\d{2}\)?\s?\d{4,5}-\d{4}\b/);if(m){c.telefone=m[0];pos('telefone')}}
@@ -421,9 +436,16 @@ function extrairSIASS(linhas,arquivo){
     if(/\bcpf\b|\brg\b|telefone|uorg/.test(n[i]))continue;
     const m=linhas[i].match(/(?:^|[^\w])([0-9OlI]{8})\s*[-–]\s*(.*)$/);
     if(!m)continue;
-    const cd=m[1].replace(/O/g,'0').replace(/[lI]/g,'1');
+    let cd=m[1].replace(/O/g,'0').replace(/[lI]/g,'1');
+    if([...cd].filter((d,i)=>d!=='10101012'[i]).length===1)cd='10101012';
     if(vistos.has(cd))continue;vistos.add(cd);
-    exames.push(nomeExame(cd,m[2]));
+    const ex=nomeExame(cd,m[2]);
+    if(cd==='10101012')ex.desc='Avaliação clínica';
+    exames.push(ex);
+  }
+  if(!exames.length&&iEx<linhas.length){
+    const resto=n.slice(iEx+1,iEx+8).join(' ');
+    if(/consult|avali|aval|clini|10101|0101012/.test(resto))exames.push({cod:'10101012',desc:'Avaliação clínica'});
   }
   if(exames.length)ordem.push('exames');
   if(c.codigo)ordem.push('codigo');
@@ -525,7 +547,14 @@ function pedacos(t){
   });
   if(atual.trim())out.push(atual);return out;
 }
+const ABREV={fed:'Federal',educ:'de Educação',tecnol:'Tecnológica',tec:'Tecnológico',univ:'Universidade',inst:'Instituto',min:'Ministério',sec:'Secretaria',nac:'Nacional',reg:'Regional',coord:'Coordenação',ger:'Gerência',div:'Divisão',dep:'Departamento',depto:'Departamento',adm:'Administração',superint:'Superintendência',hosp:'Hospital',fund:'Fundação',av:'Avenida',r:'Rua'};
+function expande(t){
+  return t.replace(/\$(?=[\s,.])/g,'S').replace(/([A-Za-zÀ-ú]{2,})\.(?=[A-Za-zÀ-ú])/g,'$1. ')
+    .replace(/\b([A-Za-zÀ-ú]{2,9})\.(?=\s|,|$)/g,(m,w)=>ABREV[w.toLowerCase()]||m)
+    .replace(/\s+,/g,',');
+}
 function limpaFala(t){
+  t=expande(t);
   return t.replace(/\(([^)]*)\)/g,', $1,').replace(/;/g,',').replace(/\s*,\s*,/g,',').replace(/,\s*\./g,'.')
    .replace(/(\d)\s?mg\b/gi,'$1 miligramas').replace(/(\d)\s?ml\b/gi,'$1 mililitros').replace(/(\d)\s?kg\b/gi,'$1 quilos')
    .replace(/([a-zà-ú])\s*\/\s*([a-zà-ú])/gi,'$1 ou $2').replace(/\s+/g,' ').replace(/\s+([,.])/g,'$1').trim();
